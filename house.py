@@ -1,5 +1,40 @@
-# /home/ananya/gits/saber/
+#!/usr/bin/python
+
+import os
+import shlex
+import signal
+import subprocess
+import sys
+import time
+from threading import Thread
+try:
+    from Queue import Queue, Empty
+except ImportError:
+    from queue import Queue, Empty
+
+
 _SECURE_DEFAULT = False
+
+class SandboxError(Exception):
+    pass
+
+if sys.version_info >= (3,):
+    def unicode(s, errors="strict"):
+        if isinstance(s, str):
+            return s
+        elif isinstance(s, bytes) or isinstance(s, bytearray):
+            return s.decode("utf-8", errors)
+        raise SandboxError("Tried to convert unrecognized type to unicode")
+
+def _monitor_file(fd, q):
+    while True:
+        line = fd.readline()
+        if not line:
+            q.put(None)
+            break
+        line = unicode(line, errors="replace")
+        line = line.rstrip('\r\n')
+        q.put(line)
 
 class House:
     """Provide an insecure sandbox to run arbitrary commands in.
