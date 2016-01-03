@@ -1,5 +1,8 @@
-import house
 import os
+import sys
+
+sys.path.insert(0, "../")
+import house
 
 s = house.get_sandbox(os.getcwd())
 s.start("bash ./bot_launch_cmd_file")
