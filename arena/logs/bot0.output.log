@@ -1,0 +1,22 @@
+# turn 1
+e 5 2 j
+e 5 0 t
+# turn 2
+e 4 5 m
+e 5 1 y
+e 0 5 y
+# turn 3
+e 1 5 u
+e 0 4 d
+e 5 0 t
+e 3 1 o
+e 0 4 d {Duplicate location, possible daisy chaining!}
+# turn 4
+# turn 5
+# turn 6
+# turn 7
+e 4 2 p
+# turn 8
+e 0 5 y
+# turn 9
+# turn 10

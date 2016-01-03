@@ -1,0 +1,124 @@
+turn 0
+turntime 2
+loadtime 2
+m poertu
+m kalima
+m ganesh
+m mugger
+m lovers
+m zephyr
+===============
+turn 1
+bots  0:True  1:True 
+m poertu
+m kalima
+m ganesh
+m mugger
+m lovers
+m zephyr
+score 0 0
+_____
+
+turn 2
+bots  0:True  1:True 
+m puerto
+m kalima
+m ghnesa
+m mrggeu
+m lsvero
+m trjhye
+score 1 1
+_____
+
+turn 3
+bots  0:True  1:True 
+m putrey
+m kamila
+m ghsena
+m mreggu
+m lsrevm
+m tyyhje
+score 2 2
+_____
+
+turn 4
+bots  0:True  1:True 
+m putdry
+m kamliu
+m ghsnea
+m moeggu
+m lsrvem
+m tyyjhe
+score 3 3
+_____
+
+turn 5
+bots  0:True  1:True 
+m prtduy
+m kimlau
+m gesnha
+m mgegou
+m lervsm
+m thyjye
+score 4 4
+_____
+
+turn 6
+bots  0:True  1:True 
+m rptduy
+m ikmlau
+m egsnha
+m gmegou
+m elrvsm
+m htyjye
+score 5 5
+_____
+
+turn 7
+bots  0:True  1:True 
+m uptdry
+m akmliu
+m hgsnea
+m omeggu
+m slrvem
+m ytyjhe
+score 6 6
+_____
+
+turn 8
+bots  0:True  1:True 
+m uptdry
+m akmliu
+m hgsnea
+m omeggu
+m slpvem
+m ytyjhe
+score 7 7
+_____
+
+turn 9
+bots  0:True  1:True 
+m dptury
+m lkmaiu
+m ngshea
+m gmeogu
+m vlpsem
+m jtyyhe
+score 8 8
+_____
+
+turn 10
+bots  0:True  1:True 
+m dpruty
+m lkiamu
+m ngehsa
+m gmgoeu
+m vlespm
+m jthyye
+score 9 9
+_____
+
+***************
+scores 10 10
+status None None
+GAME-OVER

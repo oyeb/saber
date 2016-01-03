@@ -9,6 +9,7 @@ class Game:
 		self.turntime = options["turntime"]
 		self.loadtime = options["loadtime"]
 		self.bot_count = options["bot_count"]
+		self.base_dir = options["base_dir"]
 		self.mapdata, self.size = self.parse_map(options["map"])
 
 		self.turn = 0
@@ -27,37 +28,46 @@ class Game:
 		pass
 
 	def get_start_player(self, player=None):
-		# common start data, for the game_log here
+		"""
+		common start data
+		"""
+		# for the game_log here
 		res = ["turn 0"]
 		res.append("turntime %d" % self.turntime)
 		res.append("loadtime %d" % self.loadtime)
-		res.append("bots %d" % (self.bot_count-1)) # number of other bots
 		# player specific data here
 		if player != None:
-			pass
+			res.append("bots %d" % (self.bot_count-1)) # number of other bots
 		# map here
 		for w in self.mapdata:
 			res.append("m %s" % w)
-		return '\n'.join(res)
+		if player == None:
+			res.append("="*20)
+		return '\n'.join(res)+'\n'
 
 	def start_turn(self):
 		self.turn += 1
 		self.orders = [[] for i in range(self.bot_count)] # this is filled by do_moves
 
-	def get_current_state():
+	def get_player_update(self, player_id):
+		score = "score %d\n" % self.scores[player_id]
+		map_lines = 'm ' + '\nm '.join(self.mapdata) + '\n'
+		return map_lines + score
+
+	def get_current_state(self):
 		"""
 		Used only for logging the game-level log
 		"""
-		res = ""
+		res = "bots "
 		for i in range(self.bot_count):
-			res += "bot %2d : %s" % (i, str(self.is_alive(i)))
-		map_lines = '\n'.join(self.mapdata) + '\n'
-		score_line = ' '.join(self.scores) + '\n'
-		return '___\n'
+			res += "%2d:%s " % (i, str(self.is_alive(i)))
+		map_lines = 'm ' + '\nm '.join(self.mapdata) + '\n'
+		score_line = "score " + ' '.join( map(str, self.scores) ) + '\n'
+		return res+'\n' + map_lines + score_line + '_____\n'
 
 	def parse_move(self, move):
 		"""
-		validate moves, only check if formatting  and data-type is correct
+		parse the given moves-string, only check if formatting and data-type is correct
 		"""
 		orders  = []
 		valid   = []
@@ -67,12 +77,11 @@ class Game:
 			# ignore blank lines or comments (Just in case some dumbass wants to debug via the stdout)
 			if not line or line[0] == '#':
 				continue
-			data = line.split(' ')
+			data = line.split()
 			if data[0] == 's':
 				# swap
 				if len(data[1:]) != VALID_ORDERS['s'][1]:
-					invalid.append("%s {invalid formatting!}" % line)
-					continue
+					invalid.append("%s {invalid formatting, or wrong # of args!}" % line)
 				else:
 					r1, c1, r2, c2 = data[1:]
 					# validate data-types
@@ -86,8 +95,7 @@ class Game:
 			elif data[0] == 'e':
 				# edit
 				if len(data[1:]) != VALID_ORDERS['e'][1]:
-					invalid.append("%s {invalid formatting!}" % line)
-					continue
+					invalid.append("%s {invalid formatting, or wrong # of args!}" % line)
 				else:
 					r, c, ch = data[1:]
 					# validate data-types
@@ -95,6 +103,7 @@ class Game:
 						loc = int(r), int(c)
 					except:
 						invalid.append("%s {Invalid `row` or `col`}" % line)
+						continue
 					try:
 						if ord(ch) > 96 and ord(ch) < 123:
 							orders.append( ('e', (loc, ch)) )
@@ -109,7 +118,7 @@ class Game:
 		"""
 		Now, we must validate these moves, by calling self.validate_moves()
 		"""
-		return self.validate_moves(orders, valid, invalid)
+		return self.validate_move(orders, valid, invalid)
 
 	def validate_move(self, orders, valid, invalid):
 		"""
@@ -158,11 +167,13 @@ class Game:
 				for mode, args in _orders:
 					if mode == 'e':
 						r, c = args[0]
-						self.words[r][c] = args[1]
+						self.mapdata[r] = self.mapdata[r][:c] + args[1] + self.mapdata[r][c+1:]
 					if mode == 's':
 						r1, c1 = args[0]
 						r2, c2 = args[1]
-						self.words[r1][c1], self.words[r2][c2] = self.words[r2][c2], self.words[r1][c1]
+						temp = self.mapdata[r1][c1]
+						self.mapdata[r1] = self.mapdata[r1][:c1] + self.mapdata[r2][c2] + self.mapdata[r1][c1+1:]
+						self.mapdata[r2] = self.mapdata[r2][:c2] +         temp         + self.mapdata[r2][c2+1:]
 					# Award scores, or some helper computes for "this player"
 			self.scores[pid] += 1
 		# update vision
@@ -182,15 +193,35 @@ class Game:
 		# if game is decided before max_turns, should return True
 		return False
 
-	def get_score(self, player_id=None):
+	def get_scores(self, player_id=None):
 		if player_id == None:
 			return self.scores
 		return self.scores[player_id]
 
+	def out_of_bounds(self, loc):
+		r, c = loc
+		if r < 0 or r > self.size-1 or c < 0 or c > self.size-1:
+			return True
+		return False
+
 if __name__ == '__main__':
-	opts = {"map" : "/home/ananya/gits/saber/test",
+	opts = {"map" : "/home/ananya/gits/saber/maps/small_map.map",
 			"turntime"  : 1000,
 			"loadtime"  : 1000,
-			"bot_count" : 2}
+			"bot_count" : 2,
+			"base_dir"  : "/home/ananya/gits/saber/"}
 	gg = Game(opts)
-	print(gg.get_start())
+	print(gg.get_start_player())
+
+	gg.start_game()
+	gg.start_turn()
+	move = ["w pofa", "s 0 0    1 1", "e 5 1 h", "e 4 4 k l", "   e 7 3 5", "e j k l", "s e 4 3 2", "e 4 3", "   E          2 2 asd           "]
+	a, b, c = gg.do_move(0, move)
+	print()
+	print(a)
+	print()
+
+	gg.finish_turn()
+	print(gg.get_current_state())
+
+	print(gg.get_player_update(1))
