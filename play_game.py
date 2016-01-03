@@ -62,7 +62,7 @@ game_options = {"map"       : engine_options["map"],
 # make file decriptors for game level logs
 if not os.path.exists(engine_options["log_dir"]):
 	os.mkdir(engine_options["log_dir"])
-engine_options["game_log"] = open( os.path.join( engine_options["log_dir"], "game_log.r%d" % 0), 'w' ) # round 0
+engine_options["game_log"] = open( os.path.join( engine_options["log_dir"], "game_log.r%d.log" % 0), 'w' ) # round 0
 
 # game = quantum.Game(game_options) 
 game = quantum.Game(game_options)
