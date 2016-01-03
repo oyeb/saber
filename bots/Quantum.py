@@ -2,7 +2,6 @@ import sys
 import traceback
 import random
 import time
-from math import sqrt
 
 class UnkownGameStateParameter(Exception):
 	def __init__(self, line=None, key=None):
