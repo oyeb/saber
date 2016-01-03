@@ -206,8 +206,8 @@ class Game:
 
 if __name__ == '__main__':
 	opts = {"map" : "/home/ananya/gits/saber/maps/small_map.map",
-			"turntime"  : 1000,
-			"loadtime"  : 1000,
+			"turntime"  : 2,
+			"loadtime"  : 2,
 			"bot_count" : 2,
 			"base_dir"  : "/home/ananya/gits/saber/"}
 	gg = Game(opts)
@@ -219,7 +219,7 @@ if __name__ == '__main__':
 	a, b, c = gg.do_move(0, move)
 	print()
 	print(a)
-	print()
+	print(b)
 
 	gg.finish_turn()
 	print(gg.get_current_state())

@@ -35,7 +35,7 @@ def run_game(game, bot_paths, options):
 	try:
 		for bid, bot_path in enumerate(bot_paths):
 			s = house.get_sandbox(options["arena"])
-			s.start("python %s" % os.path.join(options["base_dir"], bot_path) )
+			s.start("python3 %s" % os.path.join(options["base_dir"], bot_path) )
 			bots.append(s)
 			b_turns.append(0)
 			bot_status.append("survived")
@@ -211,7 +211,8 @@ def get_moves(game, bots, time_limit, turn, global_game_log):
 
 	# don't start timing until the bots are started
 	start_time = time.time()
-	print("GM:", start_time, "for", time_limit)
+	# print("GM:", start_time, "for", time_limit)
+	
 	# loop until received all bots send moves or are dead
 	#   or when time is up
 	while (sum(bot_finished.values()) < len(bot_finished) and
