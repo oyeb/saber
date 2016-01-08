@@ -1,28 +1,22 @@
 import random
+import map_util
 
-sample_map = ['port', 'sost', 'kail', 'mugs']
-VALID_ORDERS = {'s':('swap', 4),
-				'e':('edit', 3)}
+VALID_ORDERS = {'e':('extend', 5),   # from, to, rate
+				'w':('withdraw', 5)} # from, to, split
 class Game:
 	def __init__(self, options):
 		self.mapfile = options["map"]
+		self.map = map_util.MapBuilder().parseMap(self.mapfile)
+
 		self.turntime = options["turntime"]
 		self.loadtime = options["loadtime"]
-		self.bot_count = options["bot_count"]
 		self.base_dir = options["base_dir"]
-		self.mapdata, self.size = self.parse_map(options["map"])
+		self.bot_count = self.map.bot_count
 
 		self.turn = 0
 		self.scores = [0] * self.bot_count
 		self.active = [True] * self.bot_count
 		self.killed = [False] * self.bot_count # if True, it denotes that a bot malfunctioned and was killed by the system
-
-	def parse_map(self, mf):
-		words = []
-		with iter(open(mf, 'r')) as map_file_iter:
-			for map_line in map_file_iter:
-				words.append(map_line.strip('\r\n'))
-		return words, len(words)
 
 	def start_game(self):
 		pass
@@ -205,23 +199,10 @@ class Game:
 		return False
 
 if __name__ == '__main__':
-	opts = {"map" : "/home/ananya/gits/saber/maps/small_map.map",
+	opts = {"map" : "/home/ananya/gits/saber/maps/basic.map",
 			"turntime"  : 2,
 			"loadtime"  : 2,
-			"bot_count" : 2,
 			"base_dir"  : "/home/ananya/gits/saber/"}
 	gg = Game(opts)
-	print(gg.get_start_player())
-
-	gg.start_game()
-	gg.start_turn()
-	move = ["w pofa", "s 0 0    1 1", "e 5 1 h", "e 4 4 k l", "   e 7 3 5", "e j k l", "s e 4 3 2", "e 4 3", "   E          2 2 asd           "]
-	a, b, c = gg.do_move(0, move)
-	print()
-	print(a)
-	print(b)
-
-	gg.finish_turn()
-	print(gg.get_current_state())
-
-	print(gg.get_player_update(1))
+	print(gg.map.clusters)
+	print(gg.map.show())

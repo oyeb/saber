@@ -43,21 +43,22 @@ args = parser.parse_args()
 # run rounds:
 # bots = list of paths to bot_files
 # enumerate engine options
-engine_options = {	"turntime" : args.turntime,
-					"loadtime" : args.loadtime,
-					"points"   : args.points,
-					"map"      : os.path.join( os.getcwd(), args.map),
-					"log_dir"  : os.path.join( os.getcwd(), args.log_path ),
-					"arena"    : os.path.join( os.getcwd(), args.arena ),
-					"turns"    : args.turns,
-					"base_dir"      : os.getcwd()}
+engine_options = {	"turntime"  : args.turntime,
+					"loadtime"  : args.loadtime,
+					"points"    : args.points,
+					"map"       : os.path.join( os.getcwd(), args.map),
+					"log_dir"   : os.path.join( os.getcwd(), args.log_path ),
+					"arena"     : os.path.join( os.getcwd(), args.arena ),
+					"turns"     : args.turns,
+					"base_dir"  : os.getcwd(),
+					"bot_count" : len(args.bot_list)}
 
 # enumerate game options
 game_options = {"map"       : engine_options["map"],
 				"turntime"  : args.turntime,
 				"loadtime"  : args.loadtime,
 				"bot_count" : len(args.bot_list),
-				"base_dir"       : os.getcwd()}
+				"base_dir"  : os.getcwd()}
 
 # make file decriptors for game level logs
 if not os.path.exists(engine_options["log_dir"]):
