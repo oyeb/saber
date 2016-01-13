@@ -1,12 +1,22 @@
 import pickle
 import os
+import sys
 
 TEXT_RENDER_WIDTH = 60
 
 ASPECT_RATIO = 16.0/9.0
 DEFAULT_ZOOM = 10.0
 
+class MapfileError(Exception):
+	def __init__(self, mapfile=None):
+		if mapfile:
+			msg = "MapfileError: Problem with map-file: \"%s\", does not seem to be of the required format.\n" % os.path.basename(mapfile)
+			print(msg, file=sys.stderr)
+
 class MapBuilder:
+	"""
+	@brief      This is used for testing and debugging. Used only map generation. Once genersted, use Map to read.
+	"""
 	def __init__(self, mf=None, zoom=DEFAULT_ZOOM, aspect=ASPECT_RATIO, retrieve=False):
 		self.mfile = mf
 		self.servers = {}
@@ -137,7 +147,7 @@ class MapBuilder:
 		pickle.dump(map_data, open(os.path.join("maps", self.mfile), 'wb'))
 
 	def retrieve(self):
-		# returns a Map, not MapBuilder!
+		# returns map_data dictionary that was read from the file!
 		map_data = pickle.load(open(os.path.join("maps", self.mfile), 'rb'))
 		self.server_count = map_data["server_count"]
 		self.servers      = map_data["servers"]
@@ -149,17 +159,21 @@ class MapBuilder:
 		print(self.clusters)
 		return map_data
 
-	def parseMap(self, mfile_name):
-		map_data = pickle.load(open(os.path.join("maps", mfile_name), 'rb'))
-		return Map(map_data)
-
 class Map:
-	def __init__(self, options):
-		self.zoom         = options["zoom"]
-		self.aspect       = options["aspect"]
-		self.server_count = options["server_count"]
-		self.clusters     = options["clusters"]
-		self.bot_count    = options["bot_count"]
+	"""
+	@brief      This class only reads the pickled map, hopefully it's correctly formatted.
+	"""
+	def __init__(self, mapfile):
+		try:
+			options = pickle.load(open(os.path.join("maps", mapfile), 'rb'))
+			self.zoom         = options["zoom"]
+			self.aspect       = options["aspect"]
+			self.server_count = options["server_count"]
+			self.clusters     = options["clusters"]
+			self.bot_count    = options["bot_count"]
+		except Exception as e:
+			print(e, file=sys.stderr)
+			raise MapfileError(mapfile)
 
 	def show(self, width=TEXT_RENDER_WIDTH, aspect=None):
 		if not aspect:

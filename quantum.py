@@ -1,25 +1,37 @@
 import random
-import map_util
+import map_util, util
 
 VALID_ORDERS = {'e':('extend', 5),   # from, to, rate
 				'w':('withdraw', 5)} # from, to, split
 class Game:
 	def __init__(self, options):
+		# create map and get bot_count, server_count, etc from map_data
 		self.mapfile = options["map"]
-		self.map = map_util.MapBuilder().parseMap(self.mapfile)
+		self.map          = map_util.Map(self.mapfile)
+		self.bot_count    = self.map.bot_count
+		self.server_count = self.map.server_count
 
 		self.turntime = options["turntime"]
 		self.loadtime = options["loadtime"]
 		self.base_dir = options["base_dir"]
-		self.bot_count = self.map.bot_count
+
+	def start_game(self):
+		self.Clusters = {}
+		self.Servers = []
+		sid = 0
+		for owner in self.map.clusters.keys():
+			for server in self.map.clusters[owner]:
+				self.Servers.append(util.Server(server["coord"], server["power"], server["owner"], sid))
+				if server["owner"] in self.Clusters.keys():
+					self.Clusters[server["owner"]].append(sid)
+				else:
+					self.Clusters[server["owner"]] = [sid]
+				sid += 1
 
 		self.turn = 0
 		self.scores = [0] * self.bot_count
 		self.active = [True] * self.bot_count
 		self.killed = [False] * self.bot_count # if True, it denotes that a bot malfunctioned and was killed by the system
-
-	def start_game(self):
-		pass
 
 	def get_start_player(self, player=None):
 		"""
@@ -29,13 +41,19 @@ class Game:
 		res = ["turn 0"]
 		res.append("turntime %d" % self.turntime)
 		res.append("loadtime %d" % self.loadtime)
+		res.append("bot_count %d" % self.bot_count)
+		res.append("server_count %d" % self.server_count)
 		# player specific data here
 		if player != None:
-			res.append("bots %d" % (self.bot_count-1)) # number of other bots
+			res.append("id %d" % player)
 		# map here
-		for w in self.mapdata:
-			res.append("m %s" % w)
+		for server in self.Servers:
+			if server.owner == -1:
+				res.append("n %s" % server.strify()) # pos[0],pos[1], power, owner
+			else:
+				res.append("s %s" % server.strify()) # pos[0],pos[1], power, owner
 		if player == None:
+			res.append(self.map.show(60))
 			res.append("="*20)
 		return '\n'.join(res)+'\n'
 
@@ -199,10 +217,10 @@ class Game:
 		return False
 
 if __name__ == '__main__':
-	opts = {"map" : "/home/ananya/gits/saber/maps/basic.map",
+	opts = {"map" : "/home/ananya/gits/saber/maps/test_map.map",
 			"turntime"  : 2,
 			"loadtime"  : 2,
 			"base_dir"  : "/home/ananya/gits/saber/"}
 	gg = Game(opts)
-	print(gg.map.clusters)
-	print(gg.map.show())
+	gg.start_game()
+	print(gg.get_start_player())
