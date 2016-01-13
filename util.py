@@ -1,5 +1,3 @@
-import pickle
-
 class Server:
 	def __init__(self, pos, power, owner, index):
 		self.pos   = pos

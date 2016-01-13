@@ -12,44 +12,76 @@ class UnkownGameStateParameter(Exception):
 			print("Unrecognised format.\n", file=sys.stderr)
 		raise RuntimeError
 
+class Server:
+	def __init__(self, pos, power, owner, index):
+		self.pos   = pos
+		self.power = power
+		self.owner = owner
+
+		self._index = 0
+
+	def strify(self):
+		return "%f %f %d %d" % (self.pos[0], self.pos[1], self.power, self.owner)
+	
+	def __repr__(self):
+		return ("{O%2d,(%3.3f,%3.3f),p%3d}" % (self.owner, self.pos[0], self.pos[1], self.power))
+	
+	@property
+	# index has no setter
+	def index(self):
+		return self._index
+
+
 class ServerStack():
 	"""
 	Actual game-state as seen by "this" ServerStack
 	"""
 	def __init__(self):
 		# all state variable, rows, cols, nodes, etc
-		self.map = []
 		self.turntime = 0
 		self.loadtime = 0
 		self.turn = 0
 
 		self.active = True
+		self.Clusters = {}
+		self.Servers = []
 	
 	def setup(self, start_data):
 		"""
-		Each line must have 2 words, else line is ignored.
+		empty lines and lines without '~' are ignored
 		"""
 		lines = start_data.split('\n')
 		for line in lines:
 			try:
-				key, data = line.strip().split()
+				key, data = line.strip().split('~')
 			except ValueError:
 				# this happens because of the last newline which results in lines.split('\n') to be == [... , '...', '']
 				# and the last item cannot be unpacked into (key, data)
 				continue
 			if key == 'turn':
-				self.turn = data
+				self.turn = int(data)
 			elif key == 'turntime':
-				self.turntime = data
+				self.turntime = int(data)
 			elif key == 'loadtime':
-				self.loadtime = data
-			elif key == 'm':
-				self.map.append(data)
-			elif key == 'bots':
-				self.competitors = data # number of other bots
+				self.loadtime = int(data)
+			elif key == 'id':
+				self.my_id = int(data)
+			elif key in 'ns' and key != 'ns':
+				try:
+					sid, x, y, power, owner = data.split()
+					self.Servers.append(Server((float(x), float(y)), int(power), int(owner), int(sid)))
+					if int(owner) in self.Clusters.keys():
+						self.Clusters[int(owner)].append(int(sid))
+					else:
+						self.Clusters[int(owner)] = [int(sid)]
+				except:
+					raise UnkownGameStateParameter(line, key)
+			elif key == 'bot_count':
+				self.bot_count = int(data) # number of other bots
+			elif key == 'server_count':
+				self.server_count = int(data) # number of other bots
 			else:
 				raise UnkownGameStateParameter(line, key)
-		self.number_of_words = len(self.map)
 
 	def update(self, lines):
 		"""
