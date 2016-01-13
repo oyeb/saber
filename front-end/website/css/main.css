@@ -525,7 +525,7 @@ footer {
 }
 
 .social-icons {
-    padding-top: 60px;
+    padding-top: 0px;
 }
 
 .icon-sprite.sprite-ig {
@@ -780,7 +780,12 @@ footer {
 
 
 
-.flip-clock-wrapper{
-    margin: auto;
-    width: 55%;
+#navigation{
+    background: #22313F;
+    padding: 0px;
+    border-radius: 0px;
+    padding-top : 15px;
+    padding-right: 15px;
+    padding-left: 15px;
+    padding-bottom: 15px; 
 }
