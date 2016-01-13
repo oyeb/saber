@@ -18,7 +18,7 @@ There are some links which are valid but cannot be accesed now. For example thos
 $%$ some text $%$
 ```
 
-We have to find out how to render latex on our pages. See [specs.html](specs.html)
+We have to find out how to render latex on our pages. See [specs.html](website/specs.html)
 
 Others
 ------
