@@ -1,8 +1,16 @@
+@font-face {
+    font-family: '3Dumb';
+    src:  url('../fonts/3Dumb.ttf') format('truetype');
+
+}
+
+
 body {
     font-family: 'Raleway', Helvetica, Arial;
     font-size: 16px;
     font-weight: 400;
     color: #666666;
+    background: black;
     letter-spacing: 1px;
 }
 
@@ -61,8 +69,10 @@ a:focus {
     height: 32px;
     padding: 0px;
     margin: 0;
+    /*
     background: url(../img/brand.png) no-repeat;
     text-indent: -9999px;
+    */
 }
 
 
@@ -74,7 +84,7 @@ a:focus {
 .navbar-default {
     background: none;
     border: none;
-    padding: 0 0 60px 0;
+    padding: 20px 0 15px 0;
 }
 
 .navbar-default .navbar-nav>li>a {
@@ -125,12 +135,17 @@ a:focus {
 }
 
 .jumbotron {
-    background: #2c3e50 url(../img/banner.jpg) no-repeat;
+    background: #2c3e50 url(../img/banner2.jpg) no-repeat;
     background-size: cover;
     min-height: 650px;
     margin: 0;
     padding: 60px 0;
     opacity: 1.2;
+}
+
+video{
+    height: 100%;
+    width: 100%;
 }
 
 .jumbotron h1 {
@@ -169,6 +184,10 @@ a:focus {
 
 .jumbotron .btn-primary:hover {
     background: rgba(0, 0, 0, 0.9);
+}
+
+.jumbotron>.row{
+    padding-top: 150px;
 }
 
 .services {
@@ -788,4 +807,19 @@ footer {
     padding-right: 15px;
     padding-left: 15px;
     padding-bottom: 15px; 
+}
+
+.header{
+    z-index: 999;
+}
+
+
+.carousel-inner .row p{
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+.bob{
+    font-family: '3Dumb';
+    color: white;
 }
