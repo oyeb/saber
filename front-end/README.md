@@ -89,3 +89,6 @@ I just wished they allowed us to use a framework. Making site-wide changes is sl
 * This [plugin,](http://www.jqueryscript.net/text/BBC-News-Like-Website-Ticker-Plugin-with-jQuery-News-Ticker.html) [demo](http://www.jqueryscript.net/demo/BBC-News-Like-Website-Ticker-Plugin-with-jQuery-News-Ticker/) is ok, the colors of this site and its style is really good. Since I lack the know-how to get this, you'll have to do this. I can be on phone all night, discussing colors. Figure out a way where we can quickly share the changes. How about those collaborative file editors? So we can stay on the same page, chat, etc.
 * This [plugin,](http://www.jqueryscript.net/animation/Flexible-Customizable-jQuery-News-Ticker-Plugin-Easy-Ticker.html) [demo](http://www.jqueryscript.net/demo/Flexible-Customizable-jQuery-News-Ticker-Plugin-Easy-Ticker/) is flexible, I need mode1 though mode2 looks way cooler!
 * This [plugin,](http://www.jqueryscript.net/animation/Flexible-jQuery-Vertical-News-Ticker-Plugin-Advanced-News-Ticker.html) [demo](http://www.jqueryscript.net/demo/Flexible-jQuery-Vertical-News-Ticker-Plugin-Advanced-News-Ticker/) is by far the best looking.
+
+**11.** How do I add Quotation blocks? ike the one below:
+> I'm a quote.

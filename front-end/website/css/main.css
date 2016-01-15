@@ -1,9 +1,11 @@
 @font-face {
     font-family: '3Dumb';
     src:  url('../fonts/3Dumb.ttf') format('truetype');
-
 }
-
+@font-face {
+    font-family: 'TGE';
+    src:  url('../fonts/trump_gothic_east.ttf') format('truetype');
+}
 
 body {
     font-family: 'Raleway', Helvetica, Arial;
@@ -19,7 +21,11 @@ p {
     font-weight: 400;
 }
 
-h1,
+h1{
+    font-family: 'TGE';
+    font-style: "normal";
+    font-size: 350%;
+}
 h2,
 h3,
 h4,
@@ -138,11 +144,11 @@ a:focus {
 }
 
 .jumbotron {
-    background: #2c3e50 url(../img/banner2.jpg) no-repeat;
+    background: #2c3e50 url(../img/BOTS2.jpg) no-repeat;
     background-size: cover;
-    min-height: 650px;
+    min-height: 350px;
     margin: 0;
-    padding: 60px 0;
+    padding: 0px 0;
     opacity: 1.2;
 }
 
@@ -825,6 +831,7 @@ footer {
 .bob{
     font-family: '3Dumb';
     color: white;
+    font-size: 150%
 }
 
 .navbar-default .navbar-brand{
