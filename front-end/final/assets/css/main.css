@@ -1,6 +1,9 @@
 @import url(font-awesome.min.css);
 @import url("http://fonts.googleapis.com/css?family=Open+Sans:400,400italic,600,600italic,800,800italic");
-
+@font-face {
+    font-family: '3Dumb';
+    src:  url('../fonts/3Dumb.ttf') format('truetype');
+}
 /*
 	Spectral by HTML5 UP
 	html5up.net | @n33co
@@ -17,6 +20,7 @@
 		font: inherit;
 		vertical-align: baseline;
 	}
+	
 
 	article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
 		display: block;
@@ -46,6 +50,10 @@
 
 	body {
 		-webkit-text-size-adjust: none;
+	}
+
+	h1, h2, h3{
+		font-family: '3Dumb';
 	}
 
 /* Box Model */
@@ -957,6 +965,14 @@
 			margin-left: 8.33333%;
 		}
 
+		.timeline-wrapper{
+			width: 300px;
+		}
+
+		.timeline-series{
+			width: 0px;
+		}
+
 	}
 
 	@media screen and (max-width: 736px) {
@@ -1172,6 +1188,8 @@
 			margin-left: 8.33333%;
 		}
 
+
+
 	}
 
 	@media screen and (max-width: 480px) {
@@ -1385,6 +1403,9 @@
 
 		.\-1u\28xsmall\29 {
 			margin-left: 8.33333%;
+		}
+		.timeline-event-content p{
+			width: 200px;
 		}
 
 	}
@@ -3800,10 +3821,10 @@
 
 	body.is-mobile.landing #banner,
 	body.is-mobile.landing .wrapper.style4 {
-		background-image: -moz-linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../../images/banner.jpg");
-		background-image: -webkit-linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../../images/banner.jpg");
-		background-image: -ms-linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../../images/banner.jpg");
-		background-image: linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../../images/banner.jpg");
+		background-image: -moz-linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../../images/banner1.jpg");
+		background-image: -webkit-linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../../images/banner1.jpg");
+		background-image: -ms-linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../../images/banner1.jpg");
+		background-image: linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("../../images/banner1.jpg");
 		background-position: center center;
 		background-repeat: no-repeat;
 		background-size: cover;
@@ -3822,3 +3843,146 @@
 	.wrapper.style5 input[type="submit"], .wrapper.style5 input[type="reset"], .wrapper.style5 input[type="button"], .wrapper.style5 button, .wrapper.style5 .button{
 		color: #eeeeee;
 	}
+
+	.wrapper.style4 h3{
+		text-align: center;
+		font-size: 200%;
+	}
+
+	#logo-anokha{
+		width: 150px;
+	}
+
+	#banner p{
+		margin-bottom: .5em;
+	}
+
+	.timeline-wrapper h2{
+		font-size: 1.5em;
+	}
+
+	.timeline-series dt a{
+		font-size: .8em;
+	}
+
+	.wrapper.style5{
+		background: black;
+		color: white;
+	}
+
+	.bob{
+		font-family: '3Dumb';
+	}
+
+	.wrapper > h3{
+		font-size: 200%;
+	}
+
+	/**
+ *
+ * News
+ * 
+ */
+
+#bob {
+    max-width: 80%;
+    margin: auto;
+    font-size: 24px;
+}
+
+#bob-container {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 40px;
+    height: 300px;
+}
+
+#bob-container i {
+    font-size: 36px;
+    margin: 8px;
+    cursor: pointer;
+    -webkit-transition: all 0.1s ease-in-out;
+    -moz-transition: all 0.1s ease-in-out;
+    -ms-transition: all 0.1s ease-in-out;
+    -o-transition: all 0.1s ease-in-out;
+    transition: all 0.1s ease-in-out;
+}
+
+#bob-container i:hover {
+    color: #333;
+}
+
+#bob li {
+    color: #f2f2f2;
+    background: #74cfae;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 60px;
+    padding: 10px 16px 10px 16px;
+    line-height: 40px;
+    list-style: none;
+    font-size: 24px;
+    text-align: left;
+}
+
+#bob li .state {
+    font-size: inherit;
+    margin: 0;
+}
+
+#bob span.hour {
+    font-weight: 700;
+    font-size: 24px;
+}
+
+
+
+#bob-infos-triangle {
+    width: 0px;
+    height: 0px;
+    border-style: solid;
+    border-width: 0 15px 16px 15px;
+    border-color: transparent transparent #74cfae transparent;
+    margin: 6px auto 0;
+}
+
+#bob-infos {
+    max-width: 80%;
+    margin: auto;
+    padding: 12px;
+    color: #f2f2f2;
+    background: #74cfae;
+    min-height: 200px;
+}
+
+#bob-infos .infos-hour {
+    font-size: 50px;
+    font-weight: 700;
+    margin-top: 20px;
+}
+
+#bob-infos h4 {
+    color: #F2F2F2;
+    font-weight: 500;
+}
+
+#bob-infos .infos-text {
+    text-align: left;
+    font-size: 18px;
+}
+
+
+ ul, li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wrapper.style5 ul,li{
+	list-style: inherit;
+}
+
+.botspec{
+	text-align: center;
+}
