@@ -15,7 +15,7 @@
 			xsmall:	'(max-width: 480px)'
 		});
 
-	$(function() {
+	$(function($) {
 
 		var	$window = $(window),
 			$body = $('body'),
@@ -95,7 +95,19 @@
 
 			}
 
-			 $.timeliner({});
+			 $.timeliner({
+				startOpen:['#19550828', '#19630828'],
+			});
+			$.timeliner({
+				timelineContainer: '#timeline-js',
+				timelineSectionMarker: '.milestone',
+				oneOpen: true,
+				startState: 'flat',
+				expandAllText: '+ Show All',
+				collapseAllText: '- Hide All'
+			});
+			// Colorbox Modal
+			$(".CBmodal").colorbox({inline:true, initialWidth:100, maxWidth:682, initialHeight:100, transition:"elastic",speed:750});
 
 	});
 

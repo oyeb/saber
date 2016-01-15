@@ -3812,3 +3812,13 @@
 	body.is-mobile.landing #footer {
 		background-color: #1d242a;
 	}
+
+	/**
+	 *
+	 *	My changes
+	 *
+	 * 
+	 */
+	.wrapper.style5 input[type="submit"], .wrapper.style5 input[type="reset"], .wrapper.style5 input[type="button"], .wrapper.style5 button, .wrapper.style5 .button{
+		color: #eeeeee;
+	}
