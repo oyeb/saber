@@ -170,7 +170,7 @@ a:focus {
 }
 
 .panel{
-    background-color: #e74c3c;
+    background-color: #c0392b;
 }
 
 .panel-body{
@@ -178,6 +178,10 @@ a:focus {
     font-size: 120%;
     text-shadow: 1px 1px 1px #000000;
     text-align: center;
+}
+
+.panel-body h3{
+    color: #f39c12;
 }
 
 video{
