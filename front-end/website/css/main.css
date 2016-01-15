@@ -9,7 +9,7 @@ body {
     font-family: 'Raleway', Helvetica, Arial;
     font-size: 16px;
     font-weight: 400;
-    color: #666666;
+    color: #eeeeee;
     background: black;
     letter-spacing: 1px;
 }
@@ -25,7 +25,7 @@ h3,
 h4,
 h5,
 h6 {
-    color: #333333;
+    color: #ffffff;
     text-transform: uppercase;
     font-family: 'Raleway', Helvetica, Arial;
     font-weight: 700;
@@ -803,7 +803,7 @@ footer {
 
 
 #navigation{
-    background: #22313F;
+
     padding: 0px;
     border-radius: 0px;
     padding-top : 15px;
@@ -941,4 +941,8 @@ ul, li {
 .services p{
     display: block;
     min-height: 100px;
+}
+
+.light-bg{
+    color: #666666;
 }
