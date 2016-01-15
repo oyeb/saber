@@ -8,6 +8,7 @@ $(document).ready(function() {
     		$('#of').addClass('tada animated');
     	},1000);
 
+        $('.header').stickMe();
 
     	var date = new Date();
 
