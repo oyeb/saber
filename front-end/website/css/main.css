@@ -22,7 +22,7 @@ body {
 }
 
 p {
-    line-height: 30px;
+    line-height: 22px;
     font-weight: 400;
 }
 
@@ -41,7 +41,10 @@ h3{
     color: #A81213;
 }
 h4,
-h5,
+h5{
+    font-family: 'LGR';
+    font-size: 150%;
+}
 h6 {
     color: #ffffff;
     text-transform: uppercase;
@@ -90,6 +93,7 @@ a:focus {
     font-size: 200%;
     color: yellow;
     font-family: '3Dumb';
+    font-weight: 600;
     /*
     background: url(../img/brand.png) no-repeat;
     text-indent: -9999px;
@@ -160,10 +164,23 @@ a:focus {
     background: #e74c3c url(../img/banner.jpg) no-repeat;
     background-color: #e74c3c;
     background-size: cover;
-    min-height: 400px;
+
+    min-height: 420px;
+
     margin: 0;
     padding: 0px 0;
     opacity: 1.2;
+}
+
+.panel{
+    background-color: #e74c3c;
+}
+
+.panel-body{
+    font-family: "Archivo Narrow";
+    font-size: 120%;
+    text-shadow: 1px 1px 1px #000000;
+    text-align: center;
 }
 
 video{
@@ -209,7 +226,8 @@ video{
 }
 
 .jumbotron>.row{
-    padding-top: 120px;
+
+    padding-top: 50px;
     text-shadow: 1px 3px 10px #000000;
 }
 
@@ -521,17 +539,20 @@ video{
 .contact-info {
     background-color: #c0392b;
     padding: 12px 0;
+
+    font-family: "Crete Round";
+
 }
 
 .contact-info h6 {
     color: #000000;
     text-transform: uppercase;
-    margin: 0 0 30px 0;
+    margin: 0 0 4px 0;
 }
 
 .contact-info p {
     color: #fff;
-    font-size: 14px;
+    font-size: 18px;
 }
 
 .icon-sprite.sprite-loc {
@@ -548,7 +569,7 @@ video{
 
 .contact-info .location,
 .contact-info .email {
-    margin-bottom: 60px;
+    margin-bottom: 5px;
 }
 
 
@@ -558,7 +579,7 @@ video{
 /***footer***/
 
 footer {
-    padding: 60px 0;
+    padding: 5px 0;
 }
 
 .copyright small {
