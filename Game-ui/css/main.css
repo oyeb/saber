@@ -1,5 +1,11 @@
 #game{
-	height: 450px;
-	width: 800px;
 	background: black;
+	margin: 0;
+	padding: 0;
+	margin: auto;
+}
+
+body{
+	margin: auto;
+	margin: 0;
 }
