@@ -2404,7 +2404,7 @@
 			display: block;
 			position: relative;
 			text-align: left;
-			width: 50%;
+			width: 33%;
 		}
 
 			.features li:nth-child(1) {
@@ -2637,7 +2637,7 @@
 	}
 
 		.wrapper > .inner {
-			width: 60em;
+			width: 80%;
 			margin: 0 auto;
 		}
 
@@ -2662,7 +2662,7 @@
 		}
 
 		.wrapper.style1 {
-			background-color: #21b2a6;
+			background-color: #049372;
 			color: #c7ebe8;
 		}
 
@@ -2695,7 +2695,7 @@
 			}
 
 			.wrapper.style1 header.major p {
-				color: #c7ebe8;
+				color: black;
 			}
 
 			.wrapper.style1 label {
@@ -2986,8 +2986,9 @@
 				color: #2E3842;
 			}
 
-			.wrapper.style5 h2, .wrapper.style5 h3, .wrapper.style5 h4, .wrapper.style5 h5, .wrapper.style5 h6 {
-				color: #2E3842;
+			.wrapper.style5 h1,.wrapper.style5 h2, .wrapper.style5 h3, .wrapper.style5 h4, .wrapper.style5 h5, .wrapper.style5 h6 {
+				color: white;
+				font-size: 150%;
 			}
 
 			.wrapper.style5 hr {
@@ -3850,7 +3851,7 @@
 	}
 
 	#logo-anokha{
-		width: 150px;
+		width: 18%;
 	}
 
 	#banner p{
@@ -3872,6 +3873,7 @@
 
 	.bob{
 		font-family: '3Dumb';
+		font-size: 20px;
 	}
 
 	.wrapper > h3{
@@ -3913,8 +3915,8 @@
 }
 
 #bob li {
-    color: #f2f2f2;
-    background: #74cfae;
+    color: black;
+    background: #049372;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3951,8 +3953,8 @@
     max-width: 80%;
     margin: auto;
     padding: 12px;
-    color: #f2f2f2;
-    background: #74cfae;
+    color: black;
+    background: #049372;
     min-height: 200px;
 }
 
@@ -3986,3 +3988,39 @@
 .botspec{
 	text-align: center;
 }
+
+a:link, a:visited{
+	color: white;
+}
+
+#register{
+	border : 0;
+}
+
+h1 a:link, a:visited,h2 a:link, a:visited,h3 a:link, a:visited,h4 a:link, a:visited{
+	color: black;
+}
+
+.wrapper.style5 a:link, a:visited{
+	color: white;
+}
+
+.wrapper.style5 strong, .wrapper.style5 b{
+	color: white;
+	font-weight: 800;
+}
+
+li ul{
+
+	padding-left: 30px;
+
+}
+
+.wrapper.style5 ul{
+	padding-left: 30px;
+}
+
+.no-margin{
+	margin-bottom: 1em;
+}
+

@@ -28,7 +28,9 @@ $(document).ready(function(){
 
 					bot_no : 1,
 
-				}]	,			
+				}]	,
+
+				health : 26,			
 
 			},
 
@@ -38,6 +40,8 @@ $(document).ready(function(){
 
 				y : 40,
 
+				health : 0,
+
 			},
 
 			{
@@ -45,6 +49,9 @@ $(document).ready(function(){
 				x : 30,	
 
 				y : 80,
+
+
+				health : 0,
 
 			}],
 
@@ -55,6 +62,9 @@ $(document).ready(function(){
 				y : 90,
 
 
+				health : 0,
+
+
 			},
 
 			{
@@ -63,6 +73,9 @@ $(document).ready(function(){
 
 				y : 40,
 
+
+				health : 0,
+
 			},
 
 			{
@@ -70,6 +83,9 @@ $(document).ready(function(){
 				x : 60,	
 
 				y : 70,
+
+
+				health : 0,
 
 			}]
 
@@ -124,10 +140,15 @@ $(document).ready(function(){
 				
 					game.strokeStyle = gameState.colors[i];
 
-					game.arc((bot.x*canvas.width)/100,(bot.y*canvas.height)/100,10,0,Math.PI*2,true);
+					game.arc((bot.x*canvas.width)/100,(bot.y*canvas.height)/100,15,0,Math.PI*2,true);
 
 					game.stroke();
 
+					game.font = "15px serif";
+
+					game.fillStyle = gameState.colors[i];
+
+					game.fillText((bot.health).toString(),((bot.x*canvas.width)/100)-4,((bot.y*canvas.height)/100)+3);
 
 				});
 
@@ -183,7 +204,7 @@ $(document).ready(function(){
 
 							var distance_y = Math.abs(((bot.y*l)/100)-((to.y*l)/100));
 
-							game.moveTo((bot.x*b)/100,(bot.y*l)/100);
+							game.moveTo(((bot.x*b)/100)+8,((bot.y*l)/100)+8);
 
 							game.lineTo(((bot.x*b)/100)+(distance_x*i),((bot.y*l)/100)+(distance_y*i));
 
@@ -198,7 +219,7 @@ $(document).ready(function(){
 
 			});
 
-			if( i < 1 ){
+			if( i < 0.98 ){
 
 				i += 0.01;
 
