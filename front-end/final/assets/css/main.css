@@ -4,6 +4,10 @@
     font-family: '3Dumb';
     src:  url('../fonts/3Dumb.ttf') format('truetype');
 }
+@font-face {
+    font-family: 'TGE';
+    src:  url('../fonts/trump_gothic_east.ttf') format('truetype');
+}
 /*
 	Spectral by HTML5 UP
 	html5up.net | @n33co
@@ -3999,7 +4003,7 @@ a:link, a:visited{
 
 h1 a:link, a:visited,h2 a:link, a:visited,h3 a:link, a:visited,h4 a:link, a:visited{
 	color: black;
-}
+}	
 
 .wrapper.style5 a:link, a:visited{
 	color: white;
@@ -4024,3 +4028,25 @@ li ul{
 	margin-bottom: 1em;
 }
 
+#logo-link{
+	border-bottom : 0;
+}
+
+
+#rules-code{
+	background: #222222;
+}
+
+#prizes{
+	display: inline;
+	background: #F4B350;
+	padding: 10px;
+	color :#A81213;
+	font-family: 'TGE';
+	font-size: 150%;
+	border-radius: 6px;
+}
+
+#bob-infos-triangle{
+	border-color: transparent transparent #049372 transparent;
+}
