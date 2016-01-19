@@ -29,25 +29,26 @@ class MapBuilder:
 		
 	def get_servers(self):
 		print("Server details now! 'q' to exit")
-		print("<X ratio> <Y ratio> <initial power>")
+		print("<X ratio> <Y ratio> <initial power> <power limit")
 		while True:
 			user_input = input("> ")
 			if user_input == 'q':
 				break
 			else:
 				details = user_input.split()
-				if len(details) != 3:
+				if len(details) != 4:
 					print("Invalid Response!\n")
 					continue
 				else:
 					try:
 						x = float(details[0])
 						y = float(details[1])
-						p = int(details[2])
+						p = float(details[2])
+						l = float(details[3])
 						if x < 0.0 or x > 1.0 or y < 0.0 or y > 1.0:
 							raise
 						else:
-							self.servers[(x, y)] = p
+							self.servers[(x, y)] = (p, l)
 					except Exception as e:
 						print(e)
 						print("Invalid Row and/or Col and/or Power! (%f, %f)\n" % (x, y))
@@ -59,12 +60,13 @@ class MapBuilder:
 		self.label_servers()		
 
 	def validate(self):
-		# rebuild the server dict, only those which have non-zero power
+		# rebuild the server dict, only those which have non-zero power, pow.limit > init.power
 		actual = {}
 		for loc in self.servers.keys():
-			if self.servers[loc] > 0:
-				transformed = ( loc[0]*self.zoom, loc[1]*self.zoom)
+			if self.servers[loc][0] > 0 and self.servers[loc][1] >= self.servers[loc][0]:
 				actual[loc] = self.servers[loc]
+			else:
+				print("Ignored server @ %f,%f: pow = %f and limit = %f"%(loc[0], loc[1], self.servers[loc][0], self.servers[loc][1]))
 		self.servers = actual
 		self.server_count = len(actual)
 
@@ -89,7 +91,7 @@ class MapBuilder:
 					if self.labeled:
 						row += ("%d" % tr_servers[(r, c)]["power"])
 					else:
-						row += ("%d" % tr_servers[(r, c)])
+						row += ("%d" % tr_servers[(r, c)][0])
 				else:
 					row += (".")
 			mapstr += row+'\n'
@@ -113,7 +115,8 @@ class MapBuilder:
 					else:
 						server = {	"owner" : user_input,
 									"coord" : loc,
-									"power" : self.servers[loc]}
+									"power" : self.servers[loc][0],
+									"limit" : self.servers[loc][1]}
 						if user_input in clusters.keys():
 							clusters[user_input].append(server)
 						else:

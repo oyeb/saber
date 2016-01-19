@@ -21,7 +21,7 @@ class Game:
 		sid = 0
 		for owner in self.map.clusters.keys():
 			for server in self.map.clusters[owner]:
-				self.Servers.append(util.Server(server["coord"], server["power"], server["owner"], sid))
+				self.Servers.append(util.Server(server["coord"], server["power"], server["owner"], sid, server["limit"]))
 				if server["owner"] in self.Clusters.keys():
 					self.Clusters[server["owner"]].append(sid)
 				else:
@@ -217,7 +217,7 @@ class Game:
 		return False
 
 if __name__ == '__main__':
-	opts = {"map" : "/home/ananya/gits/saber/maps/test_map.map",
+	opts = {"map" : "/home/ananya/gits/saber/maps/test.map",
 			"turntime"  : 2,
 			"loadtime"  : 2,
 			"base_dir"  : "/home/ananya/gits/saber/"}
