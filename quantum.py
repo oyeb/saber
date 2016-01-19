@@ -38,20 +38,20 @@ class Game:
 		common start data
 		"""
 		# for the game_log here
-		res = ["turn 0"]
-		res.append("turntime %d" % self.turntime)
-		res.append("loadtime %d" % self.loadtime)
-		res.append("bot_count %d" % self.bot_count)
-		res.append("server_count %d" % self.server_count)
+		res = ["turn~0"]
+		res.append("turntime~%d" % self.turntime)
+		res.append("loadtime~%d" % self.loadtime)
+		res.append("bot_count~%d" % self.bot_count)
+		res.append("server_count~%d" % self.server_count)
 		# player specific data here
 		if player != None:
-			res.append("id %d" % player)
+			res.append("id~%d" % player)
 		# map here
-		for server in self.Servers:
+		for i, server in enumerate(self.Servers):
 			if server.owner == -1:
-				res.append("n %s" % server.strify()) # pos[0],pos[1], power, owner
+				res.append("n~%d %s" % (i, server.strify())) # pos[0],pos[1], power, owner
 			else:
-				res.append("s %s" % server.strify()) # pos[0],pos[1], power, owner
+				res.append("s~%d %s" % (i, server.strify())) # pos[0],pos[1], power, owner
 		if player == None:
 			res.append(self.map.show(60))
 			res.append("="*20)
@@ -223,4 +223,4 @@ if __name__ == '__main__':
 			"base_dir"  : "/home/ananya/gits/saber/"}
 	gg = Game(opts)
 	gg.start_game()
-	print(gg.get_start_player())
+	print(gg.get_start_player(4))
