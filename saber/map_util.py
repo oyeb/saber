@@ -6,6 +6,7 @@ TEXT_RENDER_WIDTH = 60
 
 ASPECT_RATIO = 16.0/9.0
 DEFAULT_ZOOM = 10.0
+DEFAULT_WIDTH_ACTUAL = 50
 
 class MapfileError(Exception):
 	def __init__(self, mapfile=None):
@@ -15,13 +16,14 @@ class MapfileError(Exception):
 
 class MapBuilder:
 	"""
-	@brief      This is used for testing and debugging. Used only map generation. Once genersted, use Map to read.
+	@brief      This is used for testing and debugging. Used only map generation. Once generated, use Map to read.
 	"""
-	def __init__(self, mf=None, zoom=DEFAULT_ZOOM, aspect=ASPECT_RATIO, retrieve=False):
+	def __init__(self, mf=None, zoom=DEFAULT_ZOOM, aspect=ASPECT_RATIO, actual_width=DEFAULT_WIDTH_ACTUAL, retrieve=False):
 		self.mfile = mf
 		self.servers = {}
 		self.zoom = zoom
 		self.aspect = aspect
+		self.width_actual = actual_width
 		self.labeled = False
 
 		if retrieve:
@@ -145,6 +147,7 @@ class MapBuilder:
 					"servers"      : self.servers,
 					"clusters"     : self.clusters,
 					"zoom"         : self.zoom,
+					"actual_width" : self.width_actual,
 					"bot_count"    : self.bot_count}
 
 		pickle.dump(map_data, open(os.path.join("maps", self.mfile), 'wb'))
@@ -155,6 +158,7 @@ class MapBuilder:
 		self.server_count = map_data["server_count"]
 		self.servers      = map_data["servers"]
 		self.clusters     = map_data["clusters"]
+		self.width_actual = map_data["actual_width"]
 		self.zoom         = map_data["zoom"]
 		self.aspect       = map_data["aspect"]
 		self.bot_count    = map_data["bot_count"]
@@ -174,6 +178,7 @@ class Map:
 			self.server_count = options["server_count"]
 			self.clusters     = options["clusters"]
 			self.bot_count    = options["bot_count"]
+			self.actual_width = options["actual_width"]
 		except Exception as e:
 			print(e, file=sys.stderr)
 			raise MapfileError(mapfile)
@@ -210,7 +215,8 @@ if __name__ == "__main__":
 	ch = input("Build a new map? ")
 	if len(ch) > 0 and ch in "yY":
 		fname = input("New map-file name? [.map] will be added automatically.\n> ")
-		m = MapBuilder(fname+".map", retrieve=False)
+		aw = float(input("Actual distance units (horizontal)?\n> "))
+		m = MapBuilder(fname+".map", actual_width = aw, retrieve=False)
 		m.get_servers()
 		m.save()
 	else:

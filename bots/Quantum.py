@@ -2,35 +2,16 @@ import sys
 import traceback
 import random
 import time
+import util
 
 class UnkownGameStateParameter(Exception):
 	def __init__(self, line=None, key=None):
 		if line and key:
-			msg = "Unrecognised format. Found this line, \"%s\"\nkey=\"%s\", is not understood.\nSomething wrong with saber/quantum.py\n" % (line, key)
+			msg = "Unrecognised format. Found this line, \"%s\"\nkey=\"%s\", is not understood or data format is wrong.\nSomething wrong with saber/quantum.py\n" % (line, key)
 			print(msg, file=sys.stderr)
 		else:
 			print("Unrecognised format.\n", file=sys.stderr)
 		raise RuntimeError
-
-class Server:
-	def __init__(self, pos, power, owner, index):
-		self.pos   = pos
-		self.power = power
-		self.owner = owner
-
-		self._index = 0
-
-	def strify(self):
-		return "%f %f %d %d" % (self.pos[0], self.pos[1], self.power, self.owner)
-	
-	def __repr__(self):
-		return ("{O%2d,(%3.3f,%3.3f),p%3d}" % (self.owner, self.pos[0], self.pos[1], self.power))
-	
-	@property
-	# index has no setter
-	def index(self):
-		return self._index
-
 
 class ServerStack():
 	"""
@@ -66,10 +47,14 @@ class ServerStack():
 				self.loadtime = int(data)
 			elif key == 'id':
 				self.my_id = int(data)
+			elif key == 'act_width':
+				self._actual_width = float(data)
+			elif key == 'aspect':
+				self._aspect = float(data)
 			elif key in 'ns' and key != 'ns':
 				try:
-					sid, x, y, power, owner = data.split()
-					self.Servers.append(Server((float(x), float(y)), int(power), int(owner), int(sid)))
+					sid, x, y, reserve, invested, limit, owner = data.split()
+					self.Servers.append(util.Server((float(x), float(y)), float(reserve) + float(invested), float(limit), float(owner), int(sid)))
 					if int(owner) in self.Clusters.keys():
 						self.Clusters[int(owner)].append(int(sid))
 					else:
@@ -82,37 +67,41 @@ class ServerStack():
 				self.server_count = int(data) # number of other bots
 			else:
 				raise UnkownGameStateParameter(line, key)
+		self.my_nodes    = self.Clusters[self.my_id]
+		self.enemy_nodes = [server.index for server in self.Servers if server.owner != self.my_id and server.owner != -1]
+		self.neutrals    = [server.index for server in self.Servers if server.owner == -1]
 
-	def update(self, lines):
+	def update(self, up_data):
 		"""
-		Each line can have 1 or 2 words, else line is ignored.
-		Additionally, if it has only one word, that word must == "end", else this line is ignored too.
+		empty lines and lines without '~' are ignored
 		"""
-		for line in lines.split('\n'):
-			index = 0 # row_index of the map
-			line = line.strip().split()
+		lines = up_data.split('\n')
+		for line in lines:
+			try:
+				key, data = line.strip().split('~')
+			except ValueError:
+				# this happens because of the last newline which results in lines.split('\n') to be == [... , '...', '']
+				# and the last item cannot be unpacked into (key, data)
+				continue
+			if key == 'turn':
+				self.turn = int(data)
 
-			if len(line) == 2:
-				key, data = line
-				if key == 'm':
-					self.map[index] = data
-					index += 1
-				elif key == 'score':
-					self.score = data
-				elif key == 'turn':
-					self.turn = data
-				else:
-					raise UnkownGameStateParameter(line, key)
-			elif len(line) == 1:
-				if line[0] == 'end':
-					self.active = False
-					# do antim sanskar
-					break
-				else:
-					continue
+	def dist_between(self, id1, id2):
+		"""
+		@brief      Computes (obviously, the shortest) distance between 2 servers(nodes)
+		
+		@param      self  game-state object
+		@param      id1   id of server1
+		@param      id2   id of server2
+		
+		@return     # of routers on the shortest path between the 2 given servers.
+		"""
+		p1 = self.Servers[id1].pos
+		p2 = self.Servers[id2].pos
+		return ( ((p1[0]-p2[0])*self._actual_width)**2 + ((p1[1]-p2[1])*self._actual_width/self._aspect)**2 )**0.5
 
-	def edit(self, r, c, ch):
-		sys.stdout.write( "e %d %d %c\n" % (r, c, ch) )
+	def attack(self, sid, arate):
+		sys.stdout.write( "a %d %f\n" % (sid, arate) )
 		sys.stdout.flush()
 
 	def swap(self, r1, c1, r2, c2):
