@@ -1,4 +1,4 @@
-import random
+import random, math
 import map_util
 import util
 
@@ -41,6 +41,8 @@ class Game:
 		self.scores = [0] * self.bot_count
 		self.active = [True] * self.bot_count
 		self.killed = [False] * self.bot_count # if True, it denotes that a bot malfunctioned and was killed by the system
+		self.new_conns = []
+		self.del_conns = []
 
 	def get_start_player(self, player=None):
 		"""
@@ -70,12 +72,28 @@ class Game:
 
 	def start_turn(self):
 		self.turn += 1
+		self.new_conns = []
+		self.del_conns = []
 		self.orders = [[] for i in range(self.bot_count)] # this is filled by do_moves
 
 	def get_player_update(self, player_id):
-		score = "score %d\n" % self.scores[player_id]
-		map_lines = 'm ' + '\nm '.join(self.mapdata) + '\n'
-		return map_lines + score
+		score_line = "score~%d\n" % self.scores[player_id]
+		ser_lines = ""
+		con_active_lines = ""
+		con_ex_lines = ""
+		for conn in self.del_conns:
+			try:
+				con_ex_lines += "cd~%d %d\n" % (conn[0], conn[1])
+			except TypeError:
+				# this skips the pseudo connection objects that are created in case of a withdraw
+				pass
+		for conn in self.new_conns:
+			con_ex_lines += "cn~%d %d %f %f\n" % (conn[0], conn[1], conn[2], conn[3]) # a_sid, v_sid, arate, full_distance
+		for server in self.Servers:
+			ser_lines += "s~%s\n" % (server.up_strify()) # index, reserve, invested, owner
+			for conn in server.connections.values():
+				con_active_lines += "c~%s\n" % conn.up_strify() # attacker, victim, arate, state, length
+		return (score_line + con_ex_lines + ser_lines + con_active_lines)
 
 	def get_current_state(self):
 		"""
@@ -84,9 +102,14 @@ class Game:
 		res = "bots "
 		for i in range(self.bot_count):
 			res += "%2d:%s " % (i, str(self.is_alive(i)))
-		map_lines = 'm ' + '\nm '.join(self.mapdata) + '\n'
 		score_line = "score " + ' '.join( map(str, self.scores) ) + '\n'
-		return res+'\n' + map_lines + score_line + '_____\n'
+		ser_lines = ""
+		con_lines = ""
+		for server in self.Servers:
+			ser_lines += "%d %s\n" % (server.index, server)
+			for conn in server.connections.values():
+				con_lines += "%s\n" % conn
+		return "%s\n%sClusters %r\nServers\n%sConnections\n%s_____\n" %(res, score_line, self.Clusters, ser_lines, con_lines)
 
 	def parse_move(self, pid, move):
 		"""
@@ -102,7 +125,7 @@ class Game:
 				continue
 			data = line.split()
 			if data[0] == 'a':
-				# swap
+				# attack
 				if len(data[1:]) != VALID_ORDERS['a'][1]:
 					invalid.append("%s {invalid formatting, or wrong # of args!}" % line)
 				else:
@@ -117,7 +140,7 @@ class Game:
 					except:
 						invalid.append("%s {Invalid `server_id` or `attack_rate`}" % line)
 			elif data[0] == 'w':
-				# edit
+				# withdraw
 				if len(data[1:]) != VALID_ORDERS['w'][1]:
 					invalid.append("%s {invalid formatting, or wrong # of args!}" % line)
 				else:
@@ -130,7 +153,23 @@ class Game:
 						orders.append( ('w', (a_sid, v_sid, split)) )
 						valid.append(line)
 					except:
-						invalid.append("%s {Invalid `server_id`}" % line)
+						invalid.append("%s {Invalid `server_id` or `split_ratio`}" % line)
+						continue
+			elif data[0] == 'u':
+				# update_link
+				if len(data[1:]) != VALID_ORDERS['u'][1]:
+					invalid.append("%s {invalid formatting, or wrong # of args!}" % line)
+				else:
+					src_sid, sink_sid, rate = data[1:]
+					# validate data-types
+					try:
+						a_sid = int(src_sid)
+						v_sid = int(sink_sid)
+						arate = float(rate)
+						orders.append( ('u', (a_sid, v_sid, arate)) )
+						valid.append(line)
+					except:
+						invalid.append("%s {Invalid `server_id` or `attack_rate`}" % line)
 						continue
 			else:
 				invalid.append("%s {Unknown Action!} [%s]" %(data[0], line))
@@ -209,13 +248,18 @@ class Game:
 							self.Servers[args[0]].connections[args[1]].state = STATE_MAP['making']
 						else:
 							# make new connection
-							self.Servers[args[0]].new_connection(args[1], args[2], self.dist_between(args[0], args[1]))
+							full_distance = self.dist_between(args[0], args[1])
+							self.Servers[args[0]].new_connection(args[1], args[2], full_distance)
+							self.new_conns.append((args[0], args[1], args[2], full_distance))
 					elif mode == 'w':
+						full_distance = self.Servers[args[0]].connections[args[1]].full_distance
 						self.Servers[args[0]].connections[args[1]].state = STATE_MAP['withdrawing']
+						self.Servers[args[0]].connections[args[1]].length = (args[2] * full_distance)
+
+						self.Servers[args[1]].new_connection(str(args[0]), 0, full_distance, state='withdrawing')
+						self.Servers[args[1]].connections[str(args[0])].length = full_distance - (args[2] * full_distance)
 					elif mode == 'u':
 						self.Servers[args[0]].connections[args[1]].arate = args[2]
-					# Award scores, or some helper computes for "this player"
-			self.scores[pid] += 1
 		
 		# update connections
 		for server in self.Servers:
@@ -231,7 +275,9 @@ class Game:
 					if conn.length <= 0:
 						# delete connection
 						server.update_pow(util.DCSPEED + conn.length, -util.DCSPEED - conn.length)
-						del server.connections[v_sid]
+						self.del_conns.append((conn.attacker, v_sid))
+					else:
+						server.update_pow(util.DCSPEED, -util.DCSPEED)
 				
 				# apply the damages from 'connected' ones.
 				if conn.state == STATE_MAP['connected']:
@@ -261,24 +307,30 @@ class Game:
 						# didn't connect even by this turn
 						conn.length += util.CSPEED
 						server.update_pow(-util.CSPEED, util.CSPEED)
-		
+			
+			# now delete the connections, as they can't be deleted inside the traversal
+		for dcon in self.del_conns:
+			del self.Servers[dcon[0]].connections[dcon[1]]
 		# check for takeovers!
+		# Award scores, or some helper computes for "this player"
 		for attack_server in self.Servers:
 			for v_sid in attack_server.connections.keys():
 				conn = attack_server.connections[v_sid]
 				victim_server = self.Servers[v_sid]
 				if victim_server.power <= 0:
-					print(attack_server.index, "pawned", v_sid, "of cluster", victim_server.owner)
+					print("turn", self.turn, ":", attack_server.index, "of cluster", attack_server.owner, "pawned", v_sid, "of cluster", victim_server.owner)
+					self.scores[attack_server.owner] += 10
+					self.scores[victim_server.owner] -= 0 if victim_server.owner < 0 else 5
+
 					self.Clusters[victim_server.owner].remove(v_sid)
 					self.Clusters[attack_server.owner].append(v_sid)
 
 					if victim_server.owner == -1:
-						victim_server.reserve = victim_server.limit/4.0 + (victim_server.reserve / conn.arate * util.DEFAULT_REGEN)
+						victim_server.reserve = victim_server.limit/4.0 + (-victim_server.reserve / conn.arate * util.DEFAULT_REGEN)
 					else:
-						victim_server.reserve = -victim_server.reserve + (victim_server.reserve / conn.arate * util.DEFAULT_REGEN)
+						victim_server.reserve = -victim_server.reserve + (-victim_server.reserve / conn.arate * util.DEFAULT_REGEN)
 					
 					victim_server.owner = attack_server.owner
-
 		# update ranks or cutoff level of the game?
 
 	def finish_game(self):

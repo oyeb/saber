@@ -17,20 +17,29 @@ class Server:
 
 	def strify(self):
 		return "%f %f %f %f %f %d" % (self.pos[0], self.pos[1], self.reserve, self.invested, self.limit, self.owner)
+
+	def up_strify(self):
+		# used in quantum.get_player_update()
+		return "%d %f %f %d" % (self.index, self.reserve, self.invested, self.owner)
 	
 	def __repr__(self):
-		return ("{Own%2d,(%3.3f,%3.3f),res%f,inv%f,lim%f}" % (self.owner, self.pos[0], self.pos[1], self.reserve, self.invested, self.limit))
+		return ("{Own%2d,(%3.3f,%3.3f),res%2.4f,inv%2.4f,lim%2.4f}" % (self.owner, self.pos[0], self.pos[1], self.reserve, self.invested, self.limit))
 
 	def update_pow(self, dr, di):
 		self.reserve += dr
 		self.invested += di
 		return self.reserve
 	
-	def new_connection(self, v_sid, arate, distance):
+	def sync(self, _reserve, _invested, _owner):
+		self.reserve = _reserve
+		self.invested = _invested
+		self.owner = _owner
+
+	def new_connection(self, v_sid, arate, distance, state='making'):
 		if v_sid in self.connections.keys():
 			raise RuntimeError("Already connected to %d from %d. Something wrong with quantum.py" %(v_sid, self.index))
 		else:
-			self.connections[v_sid] = Connection(self.index, v_sid, arate, distance)
+			self.connections[v_sid] = Connection(self.index, v_sid, arate, distance, state=Connection.STATE_MAP[state])
 
 	def update_connection(self, v_sid, arate):
 		if v_sid not in self.connections.keys():
@@ -53,20 +62,26 @@ class Server:
 
 class Connection:
 	STATE_MAP = {'making': 0, 'connected': 1, 'withdrawing': 2}
-	def __init__(self, attacker, victim, arate, distance):
+	def __init__(self, attacker, victim, arate, distance, state=0):
 		self.attacker = attacker
 		self.victim = victim
 		self._arate = arate
-		self.state = Connection.STATE_MAP['making']
+		self.state = state
 		# -1 length denotes that the connection is made in "this turn"
 		self.length = 0
 		self.full_distance = distance
 
-	def strify(self):
-		return "%d %d %f" % (self.attacker, self.victim, self.arate)
+	def sync(self, arate, state, length):
+		self.arate = arate
+		self.state = state
+		self.length = length
+
+	def up_strify(self):
+		# used in quantum.get_player_update()
+		return "%d %d %f %d %f" % (self.attacker, self.victim, self.arate, self.state, self.length)
 	
 	def __repr__(self):
-		return ("{A %d,V %d,rate %f,%s,%f }" % (self.attacker, self.victim, self.arate, self.state, self.length))
+		return ("{A %d,V %d,rate %f,%s,%2.2f }" % (self.attacker, self.victim, self.arate, self.state, self.length))
 
 	@property
 	def arate(self):

@@ -45,12 +45,10 @@ def run_game(game, bot_paths, options):
 				game.kill_player(bid)
 			s.pause()
 
-		options["game_log"].write(game.get_start_player())
-
 		for turn in range(options["turns"]+1):
 			if turn == 0:
 				game.start_game()
-
+				options["game_log"].write(game.get_start_player())
 			for bid, bot in enumerate(bots):
 				if game.is_alive(bid):
 					if turn == 0:
@@ -60,14 +58,14 @@ def run_game(game, bot_paths, options):
 						input_logs[bid].write(start_msg)
 					else:
 						# send updates to all
-						update = 'turn %d\n%sgo\n' % (turn, game.get_player_update(bid))
+						update = 'turn~%d\n%sgo\n' % (turn, game.get_player_update(bid))
 						bot.write(update)
 						input_logs[bid].write(update)
 						b_turns[bid] = turn
 					input_logs[bid].flush()
 			
 			if turn > 0:
-				options["game_log"].write( "turn %d\n%s\n" % (turn, game.get_current_state()) )
+				options["game_log"].write( "turn~%d\n%s\n" % (turn, game.get_current_state()) )
 				options["game_log"].flush()
 				game.start_turn()
 
@@ -167,7 +165,6 @@ def run_game(game, bot_paths, options):
 					"player_turns" : b_turns,
 					"score"        : game.get_scores(),
 					"rank"         : "bogus implementation",
-					"replaydata"   : "bewakoof bacche",
 					"game_length"  : turn}
 	replay_json = json.dumps("Abhi tak kuch kiya nahi yaar", sort_keys=True, separators=(',',':'))
 
@@ -181,7 +178,6 @@ def run_game(game, bot_paths, options):
 
 	# done
 	return game_result, replay_json
-
 #
 #
 #

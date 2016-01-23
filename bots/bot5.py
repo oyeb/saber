@@ -13,17 +13,15 @@ class myBot():
 	
 	def do_setup(self, game):
 		self.gs = game
-		print(game.my_nodes)
-		print(game.neutrals)
-		print(game.enemy_nodes)
 		self.closest = self.get_closest_nodes(game.my_nodes[0])
 
 	def do_turn(self, game):
-		print(game.turn)
 		if game.turn == 1:
-			game.attack(1, 0.4)
-		elif game.turn == 999:
-			pass		
+			game.attack(2, 0.4)
+		elif game.turn == 24:
+			game.update_link(2, 0.1)
+		elif game.turn == 26:
+			game.withdraw(2, 1.0)
 
 	def get_closest_nodes(self, src_index):
 		sid_dist = []

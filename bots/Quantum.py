@@ -71,11 +71,12 @@ class ServerStack():
 		self.enemy_nodes = [server.index for server in self.Servers if server.owner != self.my_id and server.owner != -1]
 		self.neutrals    = [server.index for server in self.Servers if server.owner == -1]
 
-	def update(self, up_data):
+	def update_state(self, up_data):
 		"""
 		empty lines and lines without '~' are ignored
 		"""
 		lines = up_data.split('\n')
+		_clusters = {}
 		for line in lines:
 			try:
 				key, data = line.strip().split('~')
@@ -85,6 +86,42 @@ class ServerStack():
 				continue
 			if key == 'turn':
 				self.turn = int(data)
+			elif key == 'score':
+				self.score = float(data)
+			elif key == 's':
+				try:
+					sid, reserve, invested, owner = data.split()
+					self.Servers[int(sid)].sync(float(reserve), float(invested), int(owner))
+					if int(owner) in _clusters.keys():
+						_clusters[int(owner)].append(int(sid))
+					else:
+						_clusters[int(owner)] = [int(sid)]
+				except:
+					raise UnkownGameStateParameter(line, key)
+			elif key == 'cd':
+				try:
+					a_sid, v_sid = data.split()
+					del self.Servers[int(a_sid)].connections[int(v_sid)]
+				except:
+					raise UnkownGameStateParameter(line, key)
+			elif key == 'cn':
+				try:
+					a_sid, v_sid, arate, fdist = data.split()
+					a_sid, v_sid, arate, fdist = int(a_sid), int(v_sid), float(arate), float(fdist)
+					self.Servers[a_sid].new_connection(v_sid, arate, fdist)
+				except:
+					raise UnkownGameStateParameter(line, key)
+			elif key == 'c':
+				try:
+					a_sid, v_sid, arate, state, length = data.split()
+					a_sid, v_sid, arate, state, length = int(a_sid), int(v_sid), float(arate), int(state), float(length)
+					self.Servers[a_sid].connections[v_sid].sync(arate, state, length)
+				except:
+					raise UnkownGameStateParameter(line, key)
+		self.Clusters = _clusters			
+		self.my_nodes    = self.Clusters[self.my_id]
+		self.enemy_nodes = [server.index for server in self.Servers if server.owner != self.my_id and server.owner != -1]
+		self.neutrals    = [server.index for server in self.Servers if server.owner == -1]
 
 	def dist_between(self, id1, id2):
 		"""
@@ -101,11 +138,15 @@ class ServerStack():
 		return ( ((p1[0]-p2[0])*self._actual_width)**2 + ((p1[1]-p2[1])*self._actual_width/self._aspect)**2 )**0.5
 
 	def attack(self, sid, arate):
-		sys.stdout.write( "a %d %f\n" % (sid, arate) )
+		sys.stdout.write( "a %d %d %f\n" % (self.my_id, sid, arate) )
 		sys.stdout.flush()
 
-	def swap(self, r1, c1, r2, c2):
-		sys.stdout.write( "s %d %d %d %d\n" % (r1, c1, r2, c2) )
+	def update_link(self, sid, arate):
+		sys.stdout.write( "u %d %d %f\n" % (self.my_id, sid, arate) )
+		sys.stdout.flush()
+
+	def withdraw(self, sid, split):
+		sys.stdout.write( "w %d %d %f\n" % (self.my_id, sid, split) )
 		sys.stdout.flush()
 
 	# helper functions
@@ -127,7 +168,7 @@ class ServerStack():
 					sys.stdout.flush()
 					map_data = ''
 				elif cline == "go":
-					game_state.update(map_data)
+					game_state.update_state(map_data)
 					if bot and game_state.active:
 						bot.do_turn(game_state)
 					sys.stdout.write("go\n")

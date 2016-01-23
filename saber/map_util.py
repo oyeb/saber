@@ -197,7 +197,7 @@ class Map:
 		for group in self.clusters.keys():
 			for server in self.clusters[group]:
 				loc = server["coord"]
-				print("Rendered", loc, "@", transform(loc))
+				# print("Rendered", loc, "@", transform(loc))
 				tr_servers[transform(loc)] = server["power"]
 		
 		mapstr = ""
