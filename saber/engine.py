@@ -168,12 +168,11 @@ def run_game(game, bot_paths, options):
 				bot.kill()
 			bot.release()
 	# consolidate game result
-	game_result = {	"game_id"      : "no name papa!",
+	game_result = {	"game_id"      : options["game_id"],
 					"time"         : str(datetime.datetime.now()),
 					"status"       : bot_status,
 					"player_turns" : b_turns,
 					"score"        : game.get_scores(),
-					"rank"         : "bogus implementation",
 					"game_length"  : turn}
 	json_replay = json.dumps(json_replay_list, separators=(',', ':'))
 

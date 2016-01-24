@@ -3,7 +3,7 @@ import traceback
 import pprint
 import sys
 import os
-import time
+import datetime
 import random
 import argparse
 import json
@@ -18,6 +18,9 @@ All paths must be relative
 parser = argparse.ArgumentParser(description="Plays a single game among the given bots", add_help=True)
 
 engine_spec = parser.add_argument_group('engine specific options')
+engine_spec.add_argument("-gi", "--game-id", dest="game_id",
+					default="boo",
+					help="GAME-ID, needs to be unique and forever increasing.")
 engine_spec.add_argument("-m", "--map-file", dest="map", required=True,
 					help="Name of the map-file")
 engine_spec.add_argument("-t", "--turns", dest="turns",
@@ -64,12 +67,13 @@ args = parser.parse_args()
 # run rounds:
 # bots = list of paths to bot_files
 # enumerate engine options
-engine_options = {	"turntime"  : args.turntime,
+engine_options = {	"game_id"   : args.game_id,
+					"turntime"  : args.turntime,
 					"loadtime"  : args.loadtime,
 					"points"    : args.points,
-					"map"       : os.path.join( os.getcwd(), args.map),
-					"log_dir"   : os.path.join( os.getcwd(), args.log_path ),
-					"arena"     : os.path.join( os.getcwd(), args.arena ),
+					"map"       : os.path.normpath( os.path.join( os.getcwd(), args.map)),
+					"log_dir"   : os.path.normpath( os.path.join( os.getcwd(), args.log_path )),
+					"arena"     : os.path.normpath( os.path.join( os.getcwd(), args.arena )),
 					"turns"     : args.turns,
 					"base_dir"  : os.getcwd(),
 					"bot_count" : len(args.bot_list)}
@@ -90,6 +94,8 @@ game_options = {"map"       : engine_options["map"],
 # make file decriptors for game level logs
 if not os.path.exists(engine_options["log_dir"]):
 	os.mkdir(engine_options["log_dir"])
+if not os.path.exists(engine_options["arena"]):
+	os.mkdir(engine_options["arena"])
 engine_options["game_log"] = open( os.path.join( engine_options["log_dir"], "game_log.r%d.log" % 0), 'w' ) # round 0
 
 # game = quantum.Game(game_options) 
