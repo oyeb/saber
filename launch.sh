@@ -11,8 +11,8 @@ python3 saber/play_game.py -m  $_map\
 					--points $points\
 					-b "bots/bot6.py"\
 					   "bots/bot5.py"\
-					-l arena/logs\
-					-a arena\
+					-l ../saber_backend/media/logs\
+					-a ../saber_backend/media/arena\
 					-cs 5\
 					-dcs 10\
 					--amult 3.2\
