@@ -27,6 +27,9 @@ def run_game(game, bot_paths, options):
 	input_logs  = [open(os.path.join(options["log_dir"], "bot%d.input.log" % i), 'w') for i in range(bot_count)]
 	output_logs = [open(os.path.join(options["log_dir"], "bot%d.output.log" % i), 'w') for i in range(bot_count)]
 	error_logs  = [open(os.path.join(options["log_dir"], "bot%d.error.log" % i), 'w') for i in range(bot_count)]
+
+	json_replay_list = []
+
 	# prepare list of bots (houses)
 	bots = []
 	b_turns = []
@@ -49,6 +52,8 @@ def run_game(game, bot_paths, options):
 			if turn == 0:
 				game.start_game()
 				options["game_log"].write(game.get_start_player())
+				# create the start json data
+				json_start = game.get_start_json()
 			for bid, bot in enumerate(bots):
 				if game.is_alive(bid):
 					if turn == 0:
@@ -65,9 +70,11 @@ def run_game(game, bot_paths, options):
 					input_logs[bid].flush()
 			
 			if turn > 0:
+				game.start_turn()
 				options["game_log"].write( "turn~%d\n%s\n" % (turn, game.get_current_state()) )
 				options["game_log"].flush()
-				game.start_turn()
+				# add this turn's state into the replay_json list
+				json_replay_list.append( game.get_current_state(mode='json') )
 
 			# get moves from all. Wait till timeout. Bots run in parallel.
 			time_limit = options["loadtime"] if (turn == 0) else options["turntime"]
@@ -137,7 +144,9 @@ def run_game(game, bot_paths, options):
 		status = ' '.join(map(str, bot_status))
 		options["game_log"].write( "%s\nscores %s\nstatus %s\nGAME-OVER\n" % ("*" * 15, scores, status) )
 		options["game_log"].flush()
-
+		# json end game
+		json_end = json.dumps({'scores' : game.get_scores()}, separators=(',', ':'))								
+		
 		for bid, bot in enumerate(bots):
 			if game.is_alive(bid):
 				scores = "scores %s\nmy_score  %d\n" % ( ' '.join(map(str, game.get_scores())), game.get_scores(bid) )
@@ -166,7 +175,7 @@ def run_game(game, bot_paths, options):
 					"score"        : game.get_scores(),
 					"rank"         : "bogus implementation",
 					"game_length"  : turn}
-	replay_json = json.dumps("Abhi tak kuch kiya nahi yaar", sort_keys=True, separators=(',',':'))
+	json_replay = json.dumps(json_replay_list, separators=(',', ':'))
 
 	# close all file descriptors!
 	for f in input_logs:
@@ -177,7 +186,7 @@ def run_game(game, bot_paths, options):
 		f.close()
 
 	# done
-	return game_result, replay_json
+	return game_result, json_start, json_replay, json_end
 #
 #
 #

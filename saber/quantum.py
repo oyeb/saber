@@ -1,4 +1,5 @@
-import random, math
+import random, math, json, copy
+
 import map_util
 import util
 
@@ -14,9 +15,10 @@ class Game:
 		self.bot_count    = self.map.bot_count
 		self.server_count = self.map.server_count
 
-		self.turntime = options["turntime"]
-		self.loadtime = options["loadtime"]
-		self.base_dir = options["base_dir"]
+		self.max_turns = options["turns"]
+		self.turntime  = options["turntime"]
+		self.loadtime  = options["loadtime"]
+		self.base_dir  = options["base_dir"]
 
 		util.DEFAULT_REGEN = options["regen"]
 		util.MAX_ARATE     = options["max_arate"]
@@ -44,7 +46,29 @@ class Game:
 		self.new_conns = []
 		self.del_conns = []
 
-	def get_start_player(self, player=None):
+	def get_start_json(self):
+		res = { "act_width" : self.map.actual_width,
+				"aspect"    : self.map.aspect,
+				"bot_count" : self.bot_count,
+				"servers"   : [],
+				"clusters"  : self.Clusters,
+				"max_turns" : self.max_turns,
+				"regen"     : util.DEFAULT_REGEN,
+				"max_arate" : util.MAX_ARATE,
+				"cspeed"    : util.CSPEED,
+				"dcspeed"   : util.DCSPEED,
+				"amult"     : self.amult}
+		for server in self.Servers:
+			res['servers'].append({	"pos"         : server.pos,
+									"reserve"     : server.reserve,
+									"invested"    : server.invested,
+									"owner"       : server.owner,
+									"limit"       : server.limit,
+									"connections" : []
+								 })
+		return json.dumps(res, sort_keys=True, separators=(',', ':'))
+
+	def get_start_player(self, player=None, showmap = True):
 		"""
 		common start data
 		"""
@@ -66,8 +90,9 @@ class Game:
 			else:
 				res.append("s~%d %s" % (i, server.strify())) # pos[0],pos[1], reserve, invested, limit, owner
 		if player == None:
-			res.append(self.map.show(60))
-			res.append("="*20)
+			if showmap:
+				res.append(self.map.show(60))
+				res.append("="*20)
 		return '\n'.join(res)+'\n'
 
 	def start_turn(self):
@@ -95,21 +120,43 @@ class Game:
 				con_active_lines += "c~%s\n" % conn.up_strify() # attacker, victim, arate, state, length
 		return (score_line + con_ex_lines + ser_lines + con_active_lines)
 
-	def get_current_state(self):
+	def get_current_state(self, mode='log'):
 		"""
 		Used only for logging the game-level log
 		"""
-		res = "bots "
-		for i in range(self.bot_count):
-			res += "%2d:%s " % (i, str(self.is_alive(i)))
-		score_line = "score " + ' '.join( map(str, self.scores) ) + '\n'
-		ser_lines = ""
-		con_lines = ""
-		for server in self.Servers:
-			ser_lines += "%d %s\n" % (server.index, server)
-			for conn in server.connections.values():
-				con_lines += "%s\n" % conn
-		return "%s\n%sClusters %r\nServers\n%sConnections\n%s_____\n" %(res, score_line, self.Clusters, ser_lines, con_lines)
+		if mode == 'log':
+			res = "bots "
+			for i in range(self.bot_count):
+				res += "%2d:%s " % (i, str(self.is_alive(i)))
+			score_line = "score " + ' '.join( map(str, self.scores) ) + '\n'
+			ser_lines = ""
+			con_lines = ""
+			for server in self.Servers:
+				ser_lines += "%d %s\n" % (server.index, server)
+				for conn in server.connections.values():
+					con_lines += "%s\n" % conn
+			return "%s\n%sClusters %r\nServers\n%sConnections\n%s_____\n" %(res, score_line, self.Clusters, ser_lines, con_lines)
+		elif mode == 'json':
+			res = { "turn"      : self.turn,
+					"alive?"    : [self.is_alive(i) for i in range(self.bot_count)],
+					"scores"    : self.scores[:],
+					"servers"   : [],
+					"clusters"  : copy.deepcopy(self.Clusters)}
+			for server in self.Servers:
+				conns = []
+				for conn in server.connections.values():
+					conns.append({	"src"    : conn.attacker,
+									"sink"   : conn.victim,
+									"arate"  : conn.arate,
+									"length" : conn.length,
+									"fdist"  : conn.full_distance
+								})
+				res['servers'].append({	"reserve"     : server.reserve,
+										"invested"    : server.invested,
+										"owner"       : server.owner,
+										"connections" : conns
+								 	})
+			return res
 
 	def parse_move(self, pid, move):
 		"""
@@ -378,6 +425,7 @@ if __name__ == '__main__':
 			"dcspeed"   : 10.0,
 			"max_arate" : 5.0,
 			"regen"     : 0.8,
+			"turns"     : 30,
 			"amult"     : 3.2}
 
 	gg = Game(opts)

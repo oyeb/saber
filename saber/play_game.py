@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 import traceback
+import pprint
 import sys
 import os
 import time
 import random
 import argparse
+import json
 
 import engine
 import quantum
@@ -76,6 +78,7 @@ engine_options = {	"turntime"  : args.turntime,
 game_options = {"map"       : engine_options["map"],
 				"turntime"  : args.turntime,
 				"loadtime"  : args.loadtime,
+				"turns"     : args.turns,
 				"bot_count" : len(args.bot_list),
 				"base_dir"  : os.getcwd(),
 				"cspeed"    : args.cspeed,
@@ -92,13 +95,20 @@ engine_options["game_log"] = open( os.path.join( engine_options["log_dir"], "gam
 # game = quantum.Game(game_options) 
 game = quantum.Game(game_options)
 
-
-result, replay_json = engine.run_game(game, args.bot_list, engine_options)
+result, json_start, json_replay, json_end = engine.run_game(game, args.bot_list, engine_options)
 
 # do more logging
+json_data_dump = open( os.path.join( engine_options["log_dir"], "game_replay.js"), 'w' )
+json_data_dump.write("START_DATA=%s\nREPLAY=%s\nEND_DATA=%s" % (json_start, json_replay, json_end))
+json_data_dump.close()
+
 print()
 print(result)
-print(replay_json)
+'''
+pp = pprint.PrettyPrinter(indent=2)
+pp.pprint(json.loads(json_replay))
+#print(json_replay)
+'''
 
 # close FDs!
 engine_options["game_log"].close()
