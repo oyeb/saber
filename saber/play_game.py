@@ -104,8 +104,14 @@ game = quantum.Game(game_options)
 result, json_start, json_replay, json_end = engine.run_game(game, args.bot_list, engine_options)
 
 # do more logging
-json_data_dump = open( os.path.join( engine_options["log_dir"], "game_replay.js"), 'w' )
-json_data_dump.write("START_DATA=%s\nREPLAY=%s\nEND_DATA=%s" % (json_start, json_replay, json_end))
+json_data_dump = open( os.path.join( engine_options["log_dir"], "game_start.json"), 'w' )
+json_data_dump.write(json_start)
+json_data_dump.close()
+json_data_dump = open( os.path.join( engine_options["log_dir"], "game_replay.json"), 'w' )
+json_data_dump.write(json_replay)
+json_data_dump.close()
+json_data_dump = open( os.path.join( engine_options["log_dir"], "game_end.json"), 'w' )
+json_data_dump.write(json_end)
 json_data_dump.close()
 
 print()
