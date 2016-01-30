@@ -7,6 +7,7 @@ import os
 import random
 import sys
 import json
+import copy
 
 import house
 
@@ -28,12 +29,15 @@ def run_game(game, bot_details, options):
 	output_logs = [open(os.path.join(options["log_dir"], "bot%d.output.log" % i), 'w') for i in range(bot_count)]
 	error_logs  = [open(os.path.join(options["log_dir"], "bot%d.error.log" % i), 'w') for i in range(bot_count)]
 
-	json_replay_list = []
+	json_mybot_ipstream = []
+	json_mybot_invalid  = []
+	json_mybot_valid    = []
+	json_mybot_ignored  = []
 
 	# prepare list of bots (houses)
 	bots = []
 	b_turns = []
-	bot_status = []
+	bot_status = ['survived' for i in range(bot_count)]
 	turn = 0
 	try:
 		for bid, detail in enumerate(bot_details):
@@ -41,14 +45,26 @@ def run_game(game, bot_details, options):
 			s.start(detail['cmd'])
 			bots.append(s)
 			b_turns.append(0)
-			bot_status.append("survived")
 			# make sure the houses are all functioning
 			if not s.is_alive:
-				bot_status[-1] = "crashed @ 0, did not start."
+				bot_status[bid] = "crashed @ 0, did not start."
 				game.kill_player(bid)
 			s.pause()
 
+		cspoke_id = 0
+		spokes = [' | ', ' / ', '---', ' \ ']
+		sys.stdout.write("turn         ")
+		sys.stdout.flush()
 		for turn in range(options["turns"]+1):
+			#turn ____ ___
+			if turn%5 == 0:
+				if turn%10 == 0:
+					sys.stdout.write('\b'*8+"%4d %s"%(turn, spokes[cspoke_id]))
+				else:
+					sys.stdout.write('\b'*3+"%s" % (spokes[cspoke_id]))
+				cspoke_id = (cspoke_id+1)%4
+				sys.stdout.flush()
+
 			if turn == 0:
 				game.start_game()
 				options["game_log"].write(game.get_start_player())
@@ -67,20 +83,19 @@ def run_game(game, bot_details, options):
 						bot.write(update)
 						input_logs[bid].write(update)
 						b_turns[bid] = turn
+						json_mybot_ipstream.append(update)
 					input_logs[bid].flush()
 			
 			if turn > 0:
 				game.start_turn()
 				options["game_log"].write( "turn~%d\n%s\n" % (turn, game.get_current_state()) )
 				options["game_log"].flush()
-				# add this turn's state into the replay_json list
-				json_replay_list.append( game.get_current_state(mode='json') )
 
 			# get moves from all. Wait till timeout. Bots run in parallel.
 			time_limit = options["loadtime"] if (turn == 0) else options["turntime"]
 			
 			alive_bot_list = [(bid, bot) for (bid, bot) in enumerate(bots) if game.is_alive(bid)]
-			moves, errors, statuses = get_moves(game, alive_bot_list, time_limit, turn, options["game_log"])
+			moves, errors, statuses = get_moves(game, alive_bot_list, bot_status, time_limit, turn, options["game_log"])
 			# moves is a dict of lists. Each list is the list of lines read from stdout
 
 			# process errors
@@ -103,21 +118,26 @@ def run_game(game, bot_details, options):
 						output_logs[bid].write('# turn %s\n' % turn)
 						if valid:
 							output_logs[bid].write('\n'.join(valid)+'\n')
-							output_logs[bid].flush()
+							json_mybot_valid.append({"turn"  : turn,
+													"moves" : valid[:]})
 						if ignored:
+							json_mybot_ignored.append({"turn"  : turn,
+													"moves" : ignored[:]})
 							error_logs[bid].write('turn %4d bot %s ignored actions:\n' % (turn, bid))
 							error_logs[bid].write('\n'.join(ignored)+'\n')
 							error_logs[bid].flush()
 
 							output_logs[bid].write('\n'.join(ignored)+'\n')
-							output_logs[bid].flush()
 						if invalid:
+							json_mybot_invalid.append({"turn"  : turn,
+													"moves" : invalid[:]})
 							error_logs[bid].write('turn %4d bot %s invalid actions:\n' % (turn, bid))
 							error_logs[bid].write('\n'.join(invalid)+'\n')
 							error_logs[bid].flush()
 
 							output_logs[bid].write('\n'.join(invalid)+'\n')
-							output_logs[bid].flush()
+						output_logs[bid].flush()
+
 			if turn > 0:
 				game.finish_turn()
 			
@@ -167,6 +187,10 @@ def run_game(game, bot_details, options):
 			if bot.is_alive:
 				bot.kill()
 			bot.release()
+	# awesome shit!
+	sys.stdout.write('\b'*3)
+	sys.stdout.write('Done!')
+	sys.stdout.flush()
 	# consolidate game result
 	game_result = {	"game_id"      : options["game_id"],
 					"time"         : str(datetime.datetime.now()),
@@ -174,7 +198,10 @@ def run_game(game, bot_details, options):
 					"player_turns" : b_turns,
 					"score"        : game.get_scores(),
 					"game_length"  : turn}
-	json_replay = json.dumps(json_replay_list, separators=(',', ':'))
+	json_ipstream = json.dumps(json_mybot_ipstream, separators=(',', ':'))
+	json_invalid  = json.dumps(json_mybot_invalid, separators=(',', ':'))
+	json_ignored  = json.dumps(json_mybot_ignored , separators=(',', ':'))
+	json_valid    = json.dumps(json_mybot_valid , separators=(',', ':'))
 
 	# close all file descriptors!
 	for f in input_logs:
@@ -185,7 +212,7 @@ def run_game(game, bot_details, options):
 		f.close()
 
 	# done
-	return game_result, json_start, json_replay, json_end
+	return game_result, json_start, json_end, json_ipstream, json_invalid, json_ignored, json_valid
 #
 #
 #
@@ -203,11 +230,11 @@ def run_game(game, bot_details, options):
 #
 #
 
-def get_moves(game, bots, time_limit, turn, global_game_log):
+def get_moves(game, bots, old_status, time_limit, turn, global_game_log):
 	bot_finished = {b:False for b, _ in bots}
 	bot_moves = {b:[] for b, _ in bots}
 	error_lines = {b:[] for b, _ in bots}
-	statuses = {b:None for b, _ in bots}
+	statuses = {b:ostat for b, ostat in enumerate(old_status)}
 
 	# resume all bots
 	for bid, bot in bots:
@@ -301,14 +328,18 @@ def get_moves(game, bots, time_limit, turn, global_game_log):
 			statuses[b] = 'timeout'
 			global_game_log.write(unicode('Slow bot%d timed out @ turn %4d\n') % (b, turn))
 			global_game_log.flush()
-			bot = bots[b][1]
+			# find 'b' in bots
+			# assign to dead_bot
+			for bb, bot in bots:
+				if bb == b:
+					dead_bot = bot
 			for x in range(100):
-				line = bot.read_error()
+				line = dead_bot.read_error()
 				if line is None:
 					break
 				error_lines[b].append(line)
 			game.kill_player(b)
-			bot.kill()
+			dead_bot.kill()
 	# remember that these are dicts!!
 	# bot_moves[bid] is a list of lines, unstripped
 	return bot_moves, error_lines, statuses

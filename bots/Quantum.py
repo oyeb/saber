@@ -101,25 +101,38 @@ class ServerStack():
 					raise UnkownGameStateParameter(line, key)
 			elif key == 'cd':
 				try:
-					a_sid, v_sid = data.split()
-					del self.Servers[int(a_sid)].connections[int(v_sid)]
+					a_sid, v_sid, _state = data.split()
+					if v_sid in self.Servers[int(a_sid)].connections.keys():
+						# a 'whostile' is deleted
+						del self.Servers[int(a_sid)].connections[v_sid]
+					else:
+						# a 'withdrawing' is deleted
+						del self.Servers[int(a_sid)].connections[int(v_sid)]
 				except:
 					raise UnkownGameStateParameter(line, key)
 			elif key == 'cn':
 				try:
-					a_sid, v_sid, arate, fdist = data.split()
-					a_sid, v_sid, arate, fdist = int(a_sid), int(v_sid), float(arate), float(fdist)
-					self.Servers[a_sid].new_connection(v_sid, arate, fdist)
+					a_sid, v_sid, arate, fdist, _state = data.split()
+					try:
+						a_sid, v_sid, arate, fdist, _state = int(a_sid), int(v_sid), float(arate), float(fdist), int(_state)
+						self.Servers[a_sid].new_connection(v_sid, arate, fdist, _state)
+					except (KeyError, ValueError):
+						a_sid, v_sid, arate, fdist, _state = int(a_sid), v_sid, float(arate), float(fdist), int(_state)
+						self.Servers[a_sid].new_connection(v_sid, arate, fdist, _state)
 				except:
 					raise UnkownGameStateParameter(line, key)
 			elif key == 'c':
 				try:
 					a_sid, v_sid, arate, state, length = data.split()
-					a_sid, v_sid, arate, state, length = int(a_sid), int(v_sid), float(arate), int(state), float(length)
-					self.Servers[a_sid].connections[v_sid].sync(arate, state, length)
+					try:
+						a_sid, v_sid, arate, state, length = int(a_sid), int(v_sid), float(arate), int(state), float(length)
+						self.Servers[a_sid].connections[v_sid].sync(arate, state, length)
+					except (KeyError, ValueError):
+						a_sid, v_sid, arate, state, length = int(a_sid), v_sid, float(arate), int(state), float(length)
+						self.Servers[a_sid].connections[v_sid].sync(arate, state, length)
 				except:
 					raise UnkownGameStateParameter(line, key)
-		self.Clusters = _clusters			
+		self.Clusters = _clusters
 		self.my_nodes    = self.Clusters[self.my_id]
 		self.enemy_nodes = [server.index for server in self.Servers if server.owner != self.my_id and server.owner != -1]
 		self.neutrals    = [server.index for server in self.Servers if server.owner == -1]

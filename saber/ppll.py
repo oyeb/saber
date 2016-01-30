@@ -22,11 +22,8 @@ else :
         parser.read("engine_settings.ini")
 engine_options = {	"turntime"    : float,
 					"loadtime"    : float,
-					"turns"       : int,
 					"epochs"      : int,
 					"threshold"   : int,
-					"bonus"       : int,
-					"reward"      : int,
 					"log_dir"     : str,
 					"map_dir"     : str,
 					"mybot_dir"   : str,
@@ -35,7 +32,8 @@ engine_options = {	"turntime"    : float,
 					"arena"       : str,
 					"user_cfg"    : str,
 					"base_dir"    : os.getcwd(),
-					"game_id"     : "boo"}
+					"game_id"     : "LOCAL_GAME",
+					"turns"       : None}
 for option in parser.options('Engine'):
 		engine_options[option] = engine_options[option](parser.get('Engine', option))
 
@@ -49,7 +47,11 @@ game_options = {"turntime"  : engine_options["turntime"],
 				"dcspeed"   : float,
 				"max_arate" : float,
 				"regen"     : float,
-				"amult"     : float}
+				"amult"     : float,
+				"sc_pawn"   : float,
+				"sc_loss"   : float,
+				"bonus"     : int,
+				"reward"    : int,}
 for option in parser.options('Game'):
 	game_options[option] = game_options[option](parser.get('Game', option))
 
@@ -58,7 +60,10 @@ sample_bots = [ {"version" : "3.5",
 				 "cmd"     : None},
 				{"version" : "3.5",
 				 "fname"   : "hard_coded.py",
-				 "cmd"     : None}]
+				 "cmd"     : None},
+				 {"version" : "3.5",
+				  "fname"   : "special.py",
+				  "cmd"     : None}]
 
 sample_dir = os.path.join(engine_options["base_dir"], engine_options["sample_dir"])
 for bot in sample_bots:
@@ -68,11 +73,14 @@ for bot in sample_bots:
 		bot['cmd'] = "python %s" % os.path.join( sample_dir, bot['fname'])
 
 parser.read(engine_options["user_cfg"])
+game_options['turns'] = engine_options['turns'] = int(parser.get('sample', 'turns'))
 mapfile = parser.get('map', 'mapfile')
 map_dir = os.path.join( os.getcwd(), engine_options["map_dir"] )
 game_options["map"] = os.path.join(map_dir, mapfile)
 
-game = quantum.Game(game_options)
+json_replay_list = []
+# json_notifications = [{} for i in game.bot_count]
+game = quantum.Game(game_options, json_replay_list) #, json_notifications)
 
 mybot_dir = os.path.join(engine_options["base_dir"], engine_options["mybot_dir"])
 mybot = {	"fname"   : parser.get('mybot', 'name'),
@@ -133,12 +141,14 @@ if not os.path.exists(engine_options["json_logdir"]):
 	os.mkdir(engine_options["json_logdir"])
 engine_options["game_log"] = open( os.path.join( engine_options["log_dir"], "game_log.r%d.log" % 0), 'w' ) # round 0
 
-result, json_start, json_replay, json_end = engine.run_game(game, bot_details, engine_options)
-
+result, json_start, json_end, json_mybot_ipstream, json_mybot_invalid, json_mybot_ignored, json_mybot_valid = engine.run_game(game, bot_details, engine_options)
+# json_replay_list is also ready,
+# jsonize it
+json_replay = json.dumps(json_replay_list, separators=(',', ':'))
 # do more logging
 if os.path.exists(engine_options["json_logdir"]):
 	json_data_dump = open( os.path.join( engine_options["json_logdir"], "game_replay.js"), 'w' )
-	json_data_dump.write("GAME_START=%s;\nGAME_REPLAY=%s;\nGAME_END=%s;\n" % (json_start, json_replay, json_end))
+	json_data_dump.write("GAME_START=%s;\nGAME_REPLAY=%s;\nMYBOT_IP_STREAM=%s;\nMYBOT_INV_STREAM=%s;\nMYBOT_IGN_STREAM=%s;\nMYBOT_VAL_STREAM=%s\nGAME_END=%s;\n" % (json_start, json_replay, json_mybot_ipstream, json_mybot_invalid, json_mybot_ignored, json_mybot_valid, json_end))
 	json_data_dump.close()
 
 print()

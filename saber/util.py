@@ -35,11 +35,11 @@ class Server:
 		self.invested = _invested
 		self.owner = _owner
 
-	def new_connection(self, v_sid, arate, distance, state='making'):
+	def new_connection(self, v_sid, arate, distance, state):
 		if v_sid in self.connections.keys():
 			raise RuntimeError("Already connected to %d from %d. Something wrong with quantum.py" %(v_sid, self.index))
 		else:
-			self.connections[v_sid] = Connection(self.index, v_sid, arate, distance, state=Connection.STATE_MAP[state])
+			self.connections[v_sid] = Connection(self.index, v_sid, arate, distance, state)
 
 	def update_connection(self, v_sid, arate):
 		if v_sid not in self.connections.keys():
@@ -62,6 +62,7 @@ class Server:
 
 class Connection:
 	STATE_MAP = {'making': 0, 'connected': 1, 'withdrawing': 2, 'headon': 3, 'whostile': 4}
+	INV_ST_MAP = {0: 'making', 1: 'connected', 2: 'withdrawing', 3: 'headon', 4: 'whostile'}
 	def __init__(self, attacker, victim, arate, distance, state=0):
 		self.attacker = attacker
 		self.victim = victim
@@ -77,10 +78,17 @@ class Connection:
 
 	def up_strify(self):
 		# used in quantum.get_player_update()
-		return "%d %d %f %d %f" % (self.attacker, self.victim, self.arate, self.state, self.length)
+		try:
+			conv = "%d %d %f %d %f" % (self.attacker, self.victim, self.arate, self.state, self.length)
+		except:
+			conv = "%d '%s' %f %d %f" % (self.attacker, self.victim, self.arate, self.state, self.length)
+		return conv
 	
 	def __repr__(self):
-		return ("{A %d,V %d,rate %f,%s,%2.2f }" % (self.attacker, self.victim, self.arate, self.state, self.length))
+		if self.state == Connection.STATE_MAP['whostile']:
+			return ("{A %d,V %s*,rate %f,%s,%2.4f}" % (self.attacker, self.victim, self.arate, 'whostile', self.length))	
+		else:
+			return ("{A %d,V %d,rate %f,%s,%2.4f}" % (self.attacker, self.victim, self.arate, Connection.INV_ST_MAP[self.state], self.length))
 
 	@property
 	def arate(self):
