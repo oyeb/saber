@@ -151,16 +151,16 @@ class ServerStack():
 		p2 = self.Servers[id2].pos
 		return ( ((p1[0]-p2[0])*self._actual_width)**2 + ((p1[1]-p2[1])*self._actual_width/self._aspect)**2 )**0.5
 
-	def attack(self, sid, arate):
-		sys.stdout.write( "a %d %d %f\n" % (self.my_id, sid, arate) )
+	def attack(self, sid, tid, arate):
+		sys.stdout.write( "a %d %d %f\n" % (sid, tid, arate) )
 		sys.stdout.flush()
 
-	def update_link(self, sid, arate):
-		sys.stdout.write( "u %d %d %f\n" % (self.my_id, sid, arate) )
+	def update_link(self, sid, tid, arate):
+		sys.stdout.write( "u %d %d %f\n" % (sid, tid, arate) )
 		sys.stdout.flush()
 
-	def withdraw(self, sid, split):
-		sys.stdout.write( "w %d %d %f\n" % (self.my_id, sid, split) )
+	def withdraw(self, sid, tid, split):
+		sys.stdout.write( "w %d %d %f\n" % (sid, tid, split) )
 		sys.stdout.flush()
 
 	# helper functions

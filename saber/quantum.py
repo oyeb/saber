@@ -273,8 +273,8 @@ class Game:
 				if a_sid not in self.Clusters[pid]:
 					invalid.append("%s {Can't operate from enemy/neutral (see src_sid)!}" % line)
 					continue
-				elif v_sid in seen_locations:
-					ignored.append("%s {Ignored this. >1 commands with same target-sid!}" % line)
+				elif (a_sid, v_sid) in seen_locations:
+					ignored.append("%s {Ignored this. >1 commands with same source-sid and target-sid!}" % line)
 					continue
 				elif self.out_of_bounds(v_sid):
 					invalid.append("%s {Invalid target-sid [IndexError]!}" % line)
@@ -283,7 +283,7 @@ class Game:
 					invalid.append("%s {Can't target self in this way! You gave `victim`==`attacker`!}" % line)
 					continue
 				else:
-					seen_locations.add(order[1][0])
+					seen_locations.add((order[1][0], order[1][1]))
 			# checks on ARATE, SPLIT_RATIO, CONNECTION_VALIDITY below
 			if order[0] == 'a':
 				a_sid, v_sid, arate = order[1]
@@ -292,7 +292,7 @@ class Game:
 					# if connection to victim exists in ['making', 'connected', 'headon'], then
 					ignored.append("%s {Ignored this. Already connected/connecting to %d from %d.}" % (line, v_sid, a_sid))
 					continue
-				if (v_sid in self.Clusters[a_sid]) and\
+				elif (v_sid in self.Clusters[self.Servers[a_sid].owner]) and\
 				   (a_sid in self.Servers[v_sid].connections.keys()) and\
 				   (self.Servers[v_sid].connections[a_sid].state in (STATE_MAP['making'], STATE_MAP['connected'])):
 					ignored.append("%s {Ignored this. Already connected from friendly server %d to %d(this). Disconnect and then retry.}" % (line, v_sid, a_sid))
@@ -372,7 +372,7 @@ class Game:
 									inv_conn.state = STATE_MAP['headon']
 							else:
 								# not enuf reserve, notify user!
-								message = "Can't attack %d from %d due to insufficient resource. Need %f" % (args[0], args[1], full_distance)
+								message = "Can't attack %d from %d due to insufficient resource. Need %f" % (args[0], args[1], check_length)
 								error_list[pid].append(('i', 0.0, message))
 					elif mode == 'w':
 						conn = self.Servers[args[0]].connections[args[1]]
@@ -385,7 +385,7 @@ class Game:
 								inv_conn.state = STATE_MAP['making']
 							if _reward_length > 0.0001:
 								# negligible rewards not given "bhaav"
-								if args[1] in self.Clusters[args[0]]:
+								if args[1] in self.Clusters[self.Servers[args[0]].owner]:
 									# victim is friendly, don't do damage
 									self.Servers[args[1]].new_connection(args[0], util.DCSPEED, full_distance, state=STATE_MAP['withdrawing'])
 									self.Servers[args[1]].connections[args[0]].length = _reward_length
@@ -435,7 +435,7 @@ class Game:
 						# check if there is an inv_conn that is also 'making'
 						inv_conn = self.Servers[v_sid].connections.get(server.index, None)
 						if inv_conn and inv_conn.state == STATE_MAP['making']:
-							if inv_conn.length + conn.length > conn.full_distance:
+							if inv_conn.length + conn.length >= conn.full_distance:
 								# both of them collided!!
 								# set correct meeting point, don't care about cspeed
 								overlap = inv_conn.length + conn.length - conn.full_distance
@@ -452,7 +452,7 @@ class Game:
 								increase = util.CSPEED / self.EPOCH_COUNT / 2
 								conn.length += increase
 								inv_conn.length += increase
-								inv_conn.update_pow(-increase, increase)
+								self.Servers[v_sid].update_pow(-increase, increase)
 								server.update_pow(-increase, increase)
 						else:
 							# no opponent connection (yet)
@@ -488,14 +488,14 @@ class Game:
 					elif conn.state == STATE_MAP['whostile']:
 						if conn.length - (util.DCSPEED / self.EPOCH_COUNT) < 0:
 							self.del_conns.append((conn.attacker, v_sid, conn.state))
-							if int(v_sid) in self.Clusters[conn.attacker]:
+							if int(v_sid) in self.Clusters[self.Servers[conn.attacker].owner]:
 								# it was successfully taken over by the attacker, now it's support time!
 								self.Servers[int(v_sid)].update_pow(conn.length, 0)
 							else:
-								# attack until this vsid is not attacker's
+								# attack until this v_sid is not attacker's
 								self.Servers[int(v_sid)].update_pow(-conn.length, 0)
 						else:
-							if int(v_sid) in self.Clusters[conn.attacker]:
+							if int(v_sid) in self.Clusters[self.Servers[conn.attacker].owner]:
 								# it was successfully taken over by the attacker, now it's support time!
 								self.Servers[int(v_sid)].update_pow(util.DCSPEED / self.EPOCH_COUNT, 0)
 							else:
@@ -546,7 +546,10 @@ class Game:
 					# in_danger!
 					d_rate, s_rate, my_arates, _cspeeds, _dcspeeds, _making, _connected, _headons = self.get_power_rates(server.index, 'epoch')
 					# _making and _connected have victim-server-ids
-					dr = (util.DEFAULT_REGEN / self.EPOCH_COUNT + _dcspeeds + s_rate) - (d_rate*self.amult + my_arates + _cspeeds)
+					if server.reserve >= server.limit:
+						dr = (util.DEFAULT_REGEN / self.EPOCH_COUNT + _dcspeeds + s_rate) - (d_rate*self.amult + my_arates + _cspeeds)
+					else:
+						dr = (_dcspeeds + s_rate) - (d_rate*self.amult + my_arates + _cspeeds)
 					# di = _cspeeds - _dcspeeds
 					if dr < 0:
 						# need to resolve, but withdraw only 1 connection in this epoch.
@@ -582,17 +585,17 @@ class Game:
 			replay_epoch_elem = self.get_current_state(mode='json')
 			replay_epoch_elem['epoch_id'] = epoch_id
 			self.replay_list.append(replay_epoch_elem)
-			# if self.turn in [54,55]:
-			# 	for sid in range(self.server_count):
-			# 		d_rate, s_rate, my_arates, _cspeeds, _dcspeeds, _making, _connected, _headons = self.get_power_rates(sid, 'epoch')
-			# 		# _making and _connected have victim-server-ids
-			# 		if self.Servers[sid].owner == -1:
-			# 			dr = (_dcspeeds + s_rate) - (d_rate*self.amult + my_arates + _cspeeds)
-			# 		else:
-			# 			dr = (util.DEFAULT_REGEN/self.EPOCH_COUNT + _dcspeeds + s_rate) - (d_rate*self.amult + my_arates + _cspeeds)
-			# 		di = _cspeeds - _dcspeeds
-			# 		print("#sid%d:" % sid, dr, di, d_rate, s_rate, my_arates, _cspeeds, _dcspeeds)
-			# 	print("t%2d-%2d\n"%(self.turn, epoch_id), self.get_current_state())
+			if self.turn in []:
+				for sid in range(self.server_count):
+					d_rate, s_rate, my_arates, _cspeeds, _dcspeeds, _making, _connected, _headons = self.get_power_rates(sid, 'epoch')
+					# _making and _connected have victim-server-ids
+					if self.Servers[sid].owner == -1 or self.Servers[sid].reserve >= self.Servers[sid].limit:
+						dr = (_dcspeeds + s_rate) - (d_rate*self.amult + my_arates + _cspeeds)
+					else:
+						dr = (util.DEFAULT_REGEN/self.EPOCH_COUNT + _dcspeeds + s_rate) - (d_rate*self.amult + my_arates + _cspeeds)
+					di = _cspeeds - _dcspeeds
+					print("#sid%d:" % sid, dr, di, d_rate, s_rate, my_arates, _cspeeds, _dcspeeds)
+				print("t%2d-%2d\n"%(self.turn, epoch_id), self.get_current_state())
 
 	def determine_takeover(self, sid):
 		# find out attacker ids
@@ -611,7 +614,7 @@ class Game:
 				src_arate = self.Servers[src_id].connections[server.index].arate
 				if src_arate > max_arate:
 					max_arate = src_arate
-		if max_arate < util.DCSPEED/self.amult:
+		if max_arate < util.DCSPEED/self.amult and whostile_srcs:
 			# 'whostile' will win, DCSPEED requires normalisation, don't remove amult. You're dumb if you want to do that. Read code... and comments.
 			# print("Yes, whostile did win this game", whostile_srcs)
 			winner = random.choice(whostile_srcs)
@@ -663,7 +666,7 @@ class Game:
 			elif conn.state == STATE_MAP['headon']:
 				sum_arates += conn.arate
 				_headons.append(conn.victim)
-			else:
+			elif conn.state == STATE_MAP['withdrawing']:
 				sum_dcspeeds += util.DCSPEED
 		if mode == 'real':
 			return (sum_damage_rates, sum_support_rates, sum_arates, sum_cspeeds, sum_dcspeeds, _making, _connected, _headons)
@@ -769,7 +772,7 @@ if __name__ == '__main__':
 		for sid in range(gg.server_count):
 			d_rate, s_rate, my_arates, _cspeeds, _dcspeeds, _making, _connected, _headons = gg.get_power_rates(sid, 'real')
 			# _making and _connected have victim-server-ids
-			if gg.Servers[sid].owner == -1:
+			if gg.Servers[sid].owner == -1 or gg.Server[sid].reserve >= gg.Server[sid].limit:
 				dr = (_dcspeeds + s_rate) - (d_rate*gg.amult + my_arates + _cspeeds)
 			else:
 				dr = (util.DEFAULT_REGEN + _dcspeeds + s_rate) - (d_rate*gg.amult + my_arates + _cspeeds)

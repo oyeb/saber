@@ -26,7 +26,10 @@ class Server:
 		return ("{Own%2d,(%3.3f,%3.3f),res%2.4f,inv%2.4f,lim%2.4f}" % (self.owner, self.pos[0], self.pos[1], self.reserve, self.invested, self.limit))
 
 	def update_pow(self, dr, di):
-		self.reserve += dr
+		if self.reserve < self.limit:
+			self.reserve += dr
+		else:
+			self.reserve = self.limit
 		self.invested += di
 		return self.reserve
 	
