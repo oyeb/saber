@@ -4,6 +4,7 @@ import map_util
 import util
 
 STATE_MAP = util.Connection.STATE_MAP
+INV_ST_MAP = {0: 'making', 1: 'connected', 2: 'withdrawing', 3: 'headon', 4: 'whostile'}
 VALID_ORDERS = {'a':('attack', 3),   # from, to, rate
 				'w':('withdraw', 3), # from, to, split
 				'u':('update', 3)}   # from, to, rate
@@ -24,7 +25,11 @@ class Game:
 		util.MAX_ARATE     = options["max_arate"]
 		util.CSPEED        = options["cspeed"]
 		util.DCSPEED       = options["dcspeed"]
+		util.THRESHOLD     = options["threshold"]
+		util.BONUS         = options["bonus"]
+		util.REWARD        = options["reward"]
 		self.amult         = options["amult"]
+		self.EPOCH_COUNT   = options["epochs"]
 
 	def start_game(self):
 		self.Clusters = {}
@@ -108,12 +113,16 @@ class Game:
 		con_ex_lines = ""
 		for conn in self.del_conns:
 			try:
-				con_ex_lines += "cd~%d %d\n" % (conn[0], conn[1])
+				con_ex_lines += "cd~%d %d %d\n" % (conn[0], conn[1], conn[2])
+			except TypeError:
+				# these are pseudo connection objects that are created in case of a withdraw!
+				con_ex_lines += "cd~%d %s* %d\n" % (conn[0], conn[1], conn[2])
+		for conn in self.new_conns:
+			try:
+				con_ex_lines += "cn~%d %d %f %f %d\n" % (conn[0], conn[1], conn[2], conn[3], conn[4]) # a_sid, v_sid, arate, full_distance, state
 			except TypeError:
 				# this skips the pseudo connection objects that are created in case of a withdraw
-				pass
-		for conn in self.new_conns:
-			con_ex_lines += "cn~%d %d %f %f\n" % (conn[0], conn[1], conn[2], conn[3]) # a_sid, v_sid, arate, full_distance
+				con_ex_lines += "cn~%d %s* %f %f %d\n" % (conn[0], conn[1], conn[2], conn[3], conn[4]) # a_sid, v_sid, arate, full_distance, state
 		for server in self.Servers:
 			ser_lines += "s~%s\n" % (server.up_strify()) # index, reserve, invested, owner
 			for conn in server.connections.values():
@@ -248,27 +257,47 @@ class Game:
 					invalid.append("%s {Can't operate from enemy/neutral (see src_sid)!}" % line)
 					continue
 				elif v_sid in seen_locations:
-					ignored.append("%s {>1 commands with same target-sid! Ignored this.}" % line)
+					ignored.append("%s {Ignored this. >1 commands with same target-sid!}" % line)
 					continue
 				elif self.out_of_bounds(v_sid):
-					invalid.append("%s {Invalid target-sid!}" % line)
+					invalid.append("%s {Invalid target-sid [IndexError]!}" % line)
+					continue
+				elif a_sid == v_sid:
+					invalid.append("%s {Can't target self in this way! You gave victim==attacker!}" % line)
 					continue
 				else:
 					seen_locations.add(order[1][0])
-			# checks on ARATE below
+			# checks on ARATE, SPLIT_RATIO, CONNECTION_VALIDITY below
 			if order[0] == 'a':
 				a_sid, v_sid, arate = order[1]
-				if v_sid in self.Servers[a_sid].connections.keys() and\
-				   self.Servers[a_sid].connections[v_sid].state == STATE_MAP['connected']:
-					ignored.append("%s {Already connected to %d from %d. Ignored this.}" % (line, v_sid, a_sid))
+				if (v_sid in self.Servers[a_sid].connections.keys()) and\
+				   (self.Servers[a_sid].connections[v_sid].state != STATE_MAP['withdrawing']):
+					# if connection to victim exists in ['making', 'connected', 'headon'], then
+					ignored.append("%s {Ignored this. Already connected/connecting to %d from %d.}" % (line, v_sid, a_sid))
+					continue
+				if (v_sid in self.Clusters[a_sid]) and\
+				   (a_sid in self.Servers[v_sid].connections.keys()) and\
+				   (self.Servers[v_sid].connections[a_sid].state in (STATE_MAP['making'], STATE_MAP['connected'])):
+					ignored.append("%s {Ignored this. Already connected from friendly server %d to %d(this). Disconnect and then retry.}" % (line, v_sid, a_sid))
 					continue
 				elif arate < 0 or arate > util.MAX_ARATE:
-					invalid.append("%s {Invalid `attack_rate` Acceptable[0, %f]}" % (line, util.MAX_ARATE))
+					invalid.append("%s {Invalid `attack_rate`. Acceptable[0, %f]}" % (line, util.MAX_ARATE))
 					continue
 			if order[0] == 'w':
 				a_sid, v_sid, split_r = order[1]
-				if split_r > 1.0 or split_r < 0:
+				if v_sid not in self.Servers[a_sid].connections.keys():
+					invalid.append("%s {No `connection` between %d and %d! First make a connection.}" % (line, a_sid, v_sid))
+					continue
+				elif split_r > 1.0 or split_r < 0:
 					invalid.append("%s {Invalid `connection split` (ratio needed)!}" % line)
+					continue
+			if order[0] == 'u':
+				a_sid, v_sid, split_r = order[1]
+				if v_sid not in self.Servers[a_sid].connections.keys():
+					invalid.append("%s {No `connection` between %d and %d! First make a connection.}" % (line, a_sid, v_sid))
+					continue
+				elif arate < 0 or arate > util.MAX_ARATE:
+					invalid.append("%s {Invalid new `attack_rate`. Acceptable[0, %f]}" % (line, util.MAX_ARATE))
 					continue
 			valid_orders.append(order)
 			valid_lines.append(line)
@@ -296,6 +325,7 @@ class Game:
 						else:
 							# make new connection
 							full_distance = self.dist_between(args[0], args[1])
+							# check if this node is caplable of making a connection
 							self.Servers[args[0]].new_connection(args[1], args[2], full_distance)
 							self.new_conns.append((args[0], args[1], args[2], full_distance))
 					elif mode == 'w':
@@ -423,6 +453,10 @@ if __name__ == '__main__':
 			"base_dir"  : "/home/ananya/gits/saber/",
 			"cspeed"    : 5.0,
 			"dcspeed"   : 10.0,
+			"threshold" : 10,
+			"epochs"    : 50,
+			"bonus"     : 12,
+			"reward"    : 6,
 			"max_arate" : 5.0,
 			"regen"     : 0.8,
 			"turns"     : 30,
@@ -434,14 +468,14 @@ if __name__ == '__main__':
 	print(gg.get_start_player(1))
 	
 	gg.start_turn()
-	vo, inv, ig = gg.do_move(1, ["a 1 2 0.4000"]) #, "a 0 0 0.1", "a 0 4 0.2", "a 0 2 15", "a 2 0 0.7"])
+	vo, inv, ig = gg.do_move(1, ["a 1 1 0.4000", "a 0 0 0.1", "a 0 4 0.2", "a 0 2 15", "a 2 0 0.7"])
 	print(vo)
 	print(inv)
 	print(ig)
 	gg.finish_turn()
 	print(gg.turn)
 	print(gg.Servers, gg.Servers[1].connections)
-
+'''
 	for i in range(0, 20):
 		gg.start_turn()
 		vo, inv, ig = gg.do_move(1, [])
@@ -450,3 +484,4 @@ if __name__ == '__main__':
 		for server in gg.Servers:
 			print(server.index, server)
 		print(gg.Servers[1].connections)
+'''

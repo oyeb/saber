@@ -21,9 +21,9 @@ if sys.version_info >= (3,):
 			return s.decode("utf-8", errors)
 		raise SandboxError("Tried to convert unrecognized type to unicode")
 
-def run_game(game, bot_paths, options):
+def run_game(game, bot_details, options):
 	# instantiate logs
-	bot_count = len(bot_paths)
+	bot_count = len(bot_details)
 	input_logs  = [open(os.path.join(options["log_dir"], "bot%d.input.log" % i), 'w') for i in range(bot_count)]
 	output_logs = [open(os.path.join(options["log_dir"], "bot%d.output.log" % i), 'w') for i in range(bot_count)]
 	error_logs  = [open(os.path.join(options["log_dir"], "bot%d.error.log" % i), 'w') for i in range(bot_count)]
@@ -36,9 +36,9 @@ def run_game(game, bot_paths, options):
 	bot_status = []
 	turn = 0
 	try:
-		for bid, bot_path in enumerate(bot_paths):
+		for bid, detail in enumerate(bot_details):
 			s = house.get_sandbox(options["arena"])
-			s.start("python3 %s" % os.path.join(options["base_dir"], bot_path) )
+			s.start(detail['cmd'])
 			bots.append(s)
 			b_turns.append(0)
 			bot_status.append("survived")

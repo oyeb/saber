@@ -32,15 +32,15 @@ engine_spec.add_argument("-tt", "--turn-time", dest="turntime",
 engine_spec.add_argument("-ld", "--load-time", dest="loadtime",
 					default="3", type=int,
 					help="Timeout for initialisation")
-engine_spec.add_argument("--points", dest="points",
-					default="1", type=int,
-					help="Points awarded for survivng a round.")
 engine_spec.add_argument("-b", dest="bot_list", action="store",
 					required=True, type=str, nargs="+",
 					help="List of bots")
 engine_spec.add_argument("-l", dest="log_path", action="store",
 					required=True, type=str,
 					help="Log Area path. This must be a relative path!")
+engine_spec.add_argument("-j", dest="json_logdir", action="store",
+					required=True, type=str,
+					help="JSON obj dump path. This must be a relative path!")
 engine_spec.add_argument("-a", dest="arena", action="store",
 					required=True, type=str, default='arena',
 					help="Arena, where the sanboxes are run. This must be a relative path.")
@@ -67,16 +67,17 @@ args = parser.parse_args()
 # run rounds:
 # bots = list of paths to bot_files
 # enumerate engine options
-engine_options = {	"game_id"   : args.game_id,
-					"turntime"  : args.turntime,
-					"loadtime"  : args.loadtime,
-					"points"    : args.points,
-					"map"       : os.path.normpath( os.path.join( os.getcwd(), args.map)),
-					"log_dir"   : os.path.normpath( os.path.join( os.getcwd(), args.log_path )),
-					"arena"     : os.path.normpath( os.path.join( os.getcwd(), args.arena )),
-					"turns"     : args.turns,
-					"base_dir"  : os.getcwd(),
-					"bot_count" : len(args.bot_list)}
+engine_options = {	"game_id"     : args.game_id,
+					"turntime"    : args.turntime,
+					"loadtime"    : args.loadtime,
+					"points"      : args.points,
+					"map"         : os.path.normpath( os.path.join( os.getcwd(), args.map)),
+					"log_dir"     : os.path.normpath( os.path.join( os.getcwd(), args.log_path )),
+					"json_logdir" : os.path.normpath( os.path.join( os.getcwd(), args.json_logdir )),
+					"arena"       : os.path.normpath( os.path.join( os.getcwd(), args.arena )),
+					"turns"       : args.turns,
+					"base_dir"    : os.getcwd(),
+					"bot_count"   : len(args.bot_list)}
 
 # enumerate game options
 game_options = {"map"       : engine_options["map"],
@@ -104,23 +105,13 @@ game = quantum.Game(game_options)
 result, json_start, json_replay, json_end = engine.run_game(game, args.bot_list, engine_options)
 
 # do more logging
-json_data_dump = open( os.path.join( engine_options["log_dir"], "game_start.json"), 'w' )
-json_data_dump.write(json_start)
-json_data_dump.close()
-json_data_dump = open( os.path.join( engine_options["log_dir"], "game_replay.json"), 'w' )
-json_data_dump.write(json_replay)
-json_data_dump.close()
-json_data_dump = open( os.path.join( engine_options["log_dir"], "game_end.json"), 'w' )
-json_data_dump.write(json_end)
-json_data_dump.close()
+if os.path.exists(engine_options["json_logdir"]):
+	json_data_dump = open( os.path.join( engine_options["json_logdir"], "game_replay.js"), 'w' )
+	json_data_dump.write("GAME_START=%s;\nGAME_REPLAY=%s;\nGAME_END=%s;\n" % (json_start, json_replay, json_end))
+	json_data_dump.close()
 
-print()
+print(os.getcwd())
 print(result)
-'''
-pp = pprint.PrettyPrinter(indent=2)
-pp.pprint(json.loads(json_replay))
-#print(json_replay)
-'''
 
 # close FDs!
 engine_options["game_log"].close()

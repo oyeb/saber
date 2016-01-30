@@ -61,12 +61,13 @@ class Server:
 		return DEFAULT_REGEN
 
 class Connection:
-	STATE_MAP = {'making': 0, 'connected': 1, 'withdrawing': 2, 'headon': 3, 'whostile': 4}
+	STATE_MAP = {'making': 0, 'connected': 1, 'withdrawing': 2}
 	def __init__(self, attacker, victim, arate, distance, state=0):
 		self.attacker = attacker
 		self.victim = victim
 		self._arate = arate
 		self.state = state
+		# -1 length denotes that the connection is made in "this turn"
 		self.length = 0
 		self.full_distance = distance
 
