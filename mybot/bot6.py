@@ -15,8 +15,10 @@ class myBot():
 		pass
 
 	def do_turn(self, game):
-		if game.turn == 12:
-			game.attack(1, 0.3)
+		if game.turn == 21:
+			game.attack(0, 1, 0.3)
+		if game.turn == 35:
+			game.withdraw(0, 1, 0.8)
 
 if __name__ == '__main__':
 	try:

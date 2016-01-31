@@ -79,8 +79,8 @@ map_dir = os.path.join( os.getcwd(), engine_options["map_dir"] )
 game_options["map"] = os.path.join(map_dir, mapfile)
 
 json_replay_list = []
-# json_notifications = [{} for i in game.bot_count]
-game = quantum.Game(game_options, json_replay_list) #, json_notifications)
+json_notifications = []
+game = quantum.Game(game_options, json_replay_list, json_notifications) #, json_notifications)
 
 mybot_dir = os.path.join(engine_options["base_dir"], engine_options["mybot_dir"])
 mybot = {	"fname"   : parser.get('mybot', 'name'),
@@ -145,10 +145,11 @@ result, json_start, json_end, json_mybot_ipstream, json_mybot_invalid, json_mybo
 # json_replay_list is also ready,
 # jsonize it
 json_replay = json.dumps(json_replay_list, separators=(',', ':'))
+jnotify     = json.dumps(json_notifications, separators=(',', ':'))
 # do more logging
 if os.path.exists(engine_options["json_logdir"]):
 	json_data_dump = open( os.path.join( engine_options["json_logdir"], "game_replay.js"), 'w' )
-	json_data_dump.write("GAME_START=%s;\nGAME_REPLAY=%s;\nMYBOT_IP_STREAM=%s;\nMYBOT_INV_STREAM=%s;\nMYBOT_IGN_STREAM=%s;\nMYBOT_VAL_STREAM=%s\nGAME_END=%s;\n" % (json_start, json_replay, json_mybot_ipstream, json_mybot_invalid, json_mybot_ignored, json_mybot_valid, json_end))
+	json_data_dump.write("GAME_START=%s;\nGAME_REPLAY=%s;\nMYBOT_IP_STREAM=%s;\nMYBOT_INV_STREAM=%s;\nMYBOT_IGN_STREAM=%s;\nMYBOT_VAL_STREAM=%s\nGAME_END=%s;\nGAME_NOTIFICATIONS=%s;\n" % (json_start, json_replay, json_mybot_ipstream, json_mybot_invalid, json_mybot_ignored, json_mybot_valid, json_end, jnotify))
 	json_data_dump.close()
 
 print()

@@ -27,6 +27,10 @@ class ServerStack():
 		self.active = True
 		self.Clusters = {}
 		self.Servers = []
+
+		self.news_deletions = []
+		self.news_additions = []
+		self.news_alerts = []
 	
 	def setup(self, start_data):
 		"""
@@ -76,6 +80,9 @@ class ServerStack():
 		"""
 		empty lines and lines without '~' are ignored
 		"""
+		self.news_deletions = []
+		self.news_additions = []
+		self.news_alerts = []
 		lines = up_data.split('\n')
 		_clusters = {}
 		for line in lines:
@@ -101,13 +108,15 @@ class ServerStack():
 					raise UnkownGameStateParameter(line, key)
 			elif key == 'cd':
 				try:
-					a_sid, v_sid, _state = data.split()
+					epoch_pct, a_sid, v_sid, _state = data.split()
 					if v_sid in self.Servers[int(a_sid)].connections.keys():
 						# a 'whostile' is deleted
 						del self.Servers[int(a_sid)].connections[v_sid]
+						self.news_deletions.append((float(epoch_pct), int(a_sid), v_sid, int(_state)))
 					else:
 						# a 'withdrawing' is deleted
 						del self.Servers[int(a_sid)].connections[int(v_sid)]
+						self.news_deletions.append((float(epoch_pct), int(a_sid), int(v_sid), int(_state)))
 				except:
 					raise UnkownGameStateParameter(line, key)
 			elif key == 'cn':
@@ -116,9 +125,11 @@ class ServerStack():
 					try:
 						a_sid, v_sid, arate, fdist, _state = int(a_sid), int(v_sid), float(arate), float(fdist), int(_state)
 						self.Servers[a_sid].new_connection(v_sid, arate, fdist, _state)
+						self.news_additions.append((int(a_sid), int(v_sid), float(arate), float(fdist), int(_state)))
 					except (KeyError, ValueError):
 						a_sid, v_sid, arate, fdist, _state = int(a_sid), v_sid, float(arate), float(fdist), int(_state)
 						self.Servers[a_sid].new_connection(v_sid, arate, fdist, _state)
+						self.news_additions.append((int(a_sid), v_sid, float(arate), float(fdist), int(_state)))
 				except:
 					raise UnkownGameStateParameter(line, key)
 			elif key == 'c':
@@ -130,6 +141,17 @@ class ServerStack():
 					except (KeyError, ValueError):
 						a_sid, v_sid, arate, state, length = int(a_sid), v_sid, float(arate), int(state), float(length)
 						self.Servers[a_sid].connections[v_sid].sync(arate, state, length)
+				except:
+					raise UnkownGameStateParameter(line, key)
+			elif key == 'A':
+				try:
+					_mode, turn_no, epoch_pct, info1, info2, info3 = data.split()
+					turn_no, epoch_pct = int(turn_no), float(epoch_pct)
+					if _mode in 'wp':
+						info1, info2, info3 =  int(info1), int(info2), int(info3)
+					elif _mode == 'i':
+						info1, info2, info3 =  int(info1), int(info2), float(info3)
+					self.news_alerts.append((turn_no, epoch_pct, _mode, info1, info2, info3))
 				except:
 					raise UnkownGameStateParameter(line, key)
 		self.Clusters = _clusters

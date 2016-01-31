@@ -9,7 +9,7 @@ VALID_ORDERS = {'a':('attack', 3),   # from, to, rate
 				'w':('withdraw', 3), # from, to, split
 				'u':('update', 3)}   # from, to, rate
 class Game:
-	def __init__(self, options, json_replay_list):
+	def __init__(self, options, json_replay_list, json_notifications):
 		# create map and get bot_count, server_count, etc from map_data
 		self.mapfile = options["map"]
 		self.map          = map_util.Map(self.mapfile)
@@ -22,6 +22,7 @@ class Game:
 		self.base_dir  = options["base_dir"]
 
 		self.replay_list   = json_replay_list
+		self.jnotify       = json_notifications
 		self.notify_logs   = None
 
 		util.DEFAULT_REGEN = options["regen"]
@@ -54,7 +55,8 @@ class Game:
 		self.active = [True] * self.bot_count
 		self.killed = [False] * self.bot_count # if True, it denotes that a bot malfunctioned and was killed by the system
 		self.new_conns = []
-		self.del_conns = []
+		self.del_conns_epoch = []
+		self.del_conns_turn = []
 
 	def get_start_json(self):
 		res = { "act_width"    : self.map.actual_width,
@@ -113,6 +115,7 @@ class Game:
 	def start_turn(self):
 		self.turn += 1
 		self.new_conns = []
+		self.del_conns_turn = []
 		self.orders = [[] for i in range(self.bot_count)] # this is filled by do_moves
 
 	def get_player_update(self, player_id):
@@ -121,18 +124,28 @@ class Game:
 		con_active_lines = ""
 		con_ex_lines = ""
 		notify_lines = ""
-		for conn in self.del_conns:
-			try:
-				con_ex_lines += "cd~%d %d %d\n" % (conn[0], conn[1], conn[2])
-			except TypeError:
-				# these are 'whostile' connection objects that are created in case of a withdraw!
-				con_ex_lines += "cd~%d '%s' %d\n" % (conn[0], conn[1], conn[2])
 		for conn in self.new_conns:
 			try:
 				con_ex_lines += "cn~%d %d %f %f %d\n" % (conn[0], conn[1], conn[2], conn[3], conn[4]) # a_sid, v_sid, arate, full_distance, state
 			except TypeError:
 				# these are 'whostile' connection objects that are created in case of a withdraw
 				con_ex_lines += "cn~%d '%s' %f %f %d\n" % (conn[0], conn[1], conn[2], conn[3], conn[4]) # a_sid, v_sid, arate, full_distance, state
+		for conn in self.del_conns_turn:
+			try:
+				con_ex_lines += "cd~%f %d %d %d\n" % (conn[0], conn[1], conn[2], conn[3])
+			except TypeError:
+				# these are 'whostile' connection objects that are created in case of a withdraw!
+				con_ex_lines += "cd~%f %d '%s' %d\n" % (conn[0], conn[1], conn[2], conn[3])
+		if self.notify_logs:
+			if self.notify_logs[player_id]:
+				for notice in self.notify_logs[player_id]:
+					# w turn ep_pct src sink state
+					# p turn pp     winner.owner winner.index, server.index
+					# i turn pp     src sink needs
+					if notice[0] in 'wp':
+						notify_lines += "A~%s %d %f %d %d %d\n" % (notice[0], notice[1], notice[2], notice[3][0], notice[3][1], notice[3][2])
+					elif notice[0] == 'i':
+						notify_lines += "A~%s %d %f %d %d %f\n" % (notice[0], notice[1], notice[2], notice[3][0], notice[3][1], notice[3][2])
 		for server in self.Servers:
 			ser_lines += "s~%s\n" % (server.up_strify()) # index, reserve, invested, owner
 			for conn in server.connections.values():
@@ -155,7 +168,8 @@ class Game:
 				for bot_notif in self.notify_logs:
 					if bot_notif:
 						for notice in bot_notif:
-							notify_lines += "%s %s" % (notice[0], notice[2])
+							# type, turn, epoch_id, (args), message
+							notify_lines += "%s %f %s" % (notice[0], notice[2], notice[4])
 			for server in self.Servers:
 				ser_lines += "%d %s\n" % (server.index, server)
 				for conn in server.connections.values():
@@ -341,7 +355,10 @@ class Game:
 		self.notify_logs = error_list
 	
 	def implement_commands(self, error_list):
-		for pid, _orders in enumerate(self.orders):
+		turing = [(pid, _orders) for pid, _orders in enumerate(self.orders)]
+		random.shuffle(turing)
+
+		for pid, _orders in turing:
 			if _orders:
 				for mode, args in _orders:
 					if mode == 'a':
@@ -373,7 +390,12 @@ class Game:
 							else:
 								# not enuf reserve, notify user!
 								message = "Can't attack %d from %d due to insufficient resource. Need %f" % (args[0], args[1], check_length)
-								error_list[pid].append(('i', 0.0, message))
+								error_list[pid].append(('i', self.turn, 0.0, (args[0], args[1], check_length), message ))
+								self.jnotify.append({"turn"     : self.turn,
+													"bot_id"    : pid,
+													"epoch"     : 0.0,
+													"type"      : 'i',
+													"msg"       : message})
 					elif mode == 'w':
 						conn = self.Servers[args[0]].connections[args[1]]
 						full_distance = self.dist_between(args[0], args[1])
@@ -411,7 +433,7 @@ class Game:
 
 	def do_epoch(self, error_list):
 		for epoch_id in range(self.EPOCH_COUNT):
-			self.del_conns = []
+			self.del_conns_epoch = []
 			# inverse connection map, added even if connections are not entirely `made`, or in `withdrawing` state.
 			# Also includes connections from owner-cluster
 			self.inv_cmap = { i: [] for i in range(0, self.server_count)}
@@ -467,9 +489,10 @@ class Game:
 						# it's just now got 'connected' or 'headon', inflict damage in next epoch, not now.
 					elif conn.state == STATE_MAP['withdrawing']:
 						if conn.length - (util.DCSPEED / self.EPOCH_COUNT) < 0:
-							self.del_conns.append((conn.attacker, v_sid, conn.state))
+							self.del_conns_epoch.append((epoch_id/self.EPOCH_COUNT, conn.attacker, v_sid, conn.state))
+							self.del_conns_turn.append((epoch_id/self.EPOCH_COUNT, conn.attacker, v_sid, conn.state))
 							server.update_pow(conn.length, -conn.length)
-							# tell user the epoch number for exact time-of-death
+							# notify user the epoch number for exact time-of-death
 						else:
 							server.update_pow(util.DCSPEED / self.EPOCH_COUNT, -util.DCSPEED / self.EPOCH_COUNT)
 							conn.length -= util.DCSPEED / self.EPOCH_COUNT
@@ -487,7 +510,8 @@ class Game:
 						self.Servers[v_sid].update_pow(-conn.arate * self.amult / self.EPOCH_COUNT, 0)
 					elif conn.state == STATE_MAP['whostile']:
 						if conn.length - (util.DCSPEED / self.EPOCH_COUNT) < 0:
-							self.del_conns.append((conn.attacker, v_sid, conn.state))
+							self.del_conns_epoch.append((epoch_id/self.EPOCH_COUNT, conn.attacker, v_sid, conn.state))
+							self.del_conns_turn.append((epoch_id/self.EPOCH_COUNT, conn.attacker, v_sid, conn.state))
 							if int(v_sid) in self.Clusters[self.Servers[conn.attacker].owner]:
 								# it was successfully taken over by the attacker, now it's support time!
 								self.Servers[int(v_sid)].update_pow(conn.length, 0)
@@ -511,10 +535,10 @@ class Game:
 							self.Servers[v_sid].update_pow(-conn.arate * self.amult / self.EPOCH_COUNT, 0)
 						server.update_pow(-conn.arate / self.EPOCH_COUNT, 0)
 			# delete the dead connection objects!!
-			for dcon in self.del_conns:
-				del self.Servers[dcon[0]].connections[dcon[1]]
+			for dcon in self.del_conns_epoch:
+				del self.Servers[dcon[1]].connections[dcon[2]]
 				# also update the inverse-connection-map!!
-				self.inv_cmap[dcon[1]].remove(dcon[0])
+				self.inv_cmap[dcon[2]].remove(dcon[1])
 			
 			# check takeovers
 			for server in self.Servers:
@@ -522,7 +546,12 @@ class Game:
 					# takeover is happening!!
 					winner = self.Servers[self.determine_takeover(server.index)]
 					message = "%d's %d pawned your server %d! @ turn(%d)+%2.4f" % (winner.owner, winner.index, server.index, self.turn, epoch_id/self.EPOCH_COUNT)
-					error_list[server.owner].append(('p', epoch_id/self.EPOCH_COUNT, message))
+					error_list[server.owner].append(('p', self.turn, epoch_id/self.EPOCH_COUNT, (winner.owner, winner.index, server.index), message ))
+					self.jnotify.append({"turn"     : self.turn,
+										"bot_id"    : server.owner,
+										"epoch"     : epoch_id/self.EPOCH_COUNT,
+										"type"      : 'p',
+										"msg"       : message})
 					# award bonuses, ensure no race condition
 					if server.owner == -1:
 						server.update_pow(util.BONUS, 0)
@@ -571,7 +600,12 @@ class Game:
 							bakra_conn = server.connections[bakra]
 							# notify user of this automatic, "uintended" operation
 							message = "Server %d is \"in-danger\". Game 'auto-withdrew' connection to %d (state:'%s') @ turn(%d)+%2.4f" % (server.index, bakra_conn.victim, INV_ST_MAP[bakra_conn.state], self.turn, epoch_id/self.EPOCH_COUNT) 
-							error_list[server.owner].append(('w', epoch_id/self.EPOCH_COUNT, message))
+							error_list[server.owner].append(('w', self.turn, epoch_id/self.EPOCH_COUNT, (server.index, bakra_conn.victim, bakra_conn.state), message ))
+							self.jnotify.append({"turn"     : self.turn,
+												"bot_id"    : server.owner,
+												"epoch"     : epoch_id/self.EPOCH_COUNT,
+												"type"      : 'w',
+												"msg"       : message})
 							# withdraw it!
 							bakra_conn.state = STATE_MAP['withdrawing']
 						else:
