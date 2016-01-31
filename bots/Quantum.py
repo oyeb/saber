@@ -186,7 +186,10 @@ class ServerStack():
 		sys.stdout.flush()
 
 	# helper functions
-	
+	def error_dump(self, whatever):
+		sys.stderr.write(str(whatever)+"\n")
+		sys.stderr.flush()
+
 	@staticmethod
 	def launch(bot=None):
 		game_state = ServerStack()

@@ -169,7 +169,7 @@ class Game:
 					if bot_notif:
 						for notice in bot_notif:
 							# type, turn, epoch_id, (args), message
-							notify_lines += "%s %f %s" % (notice[0], notice[2], notice[4])
+							notify_lines += "%s %f %s\n" % (notice[0], notice[2], notice[4])
 			for server in self.Servers:
 				ser_lines += "%d %s\n" % (server.index, server)
 				for conn in server.connections.values():
@@ -323,7 +323,7 @@ class Game:
 					invalid.append("%s {Invalid `connection split` (ratio needed)!}" % line)
 					continue
 			if order[0] == 'u':
-				a_sid, v_sid, split_r = order[1]
+				a_sid, v_sid, arate = order[1]
 				if v_sid not in self.Servers[a_sid].connections.keys():
 					invalid.append("%s {No `connection` between %d and %d! First make a connection.}" % (line, a_sid, v_sid))
 					continue
@@ -412,6 +412,7 @@ class Game:
 									self.Servers[args[1]].new_connection(args[0], util.DCSPEED, full_distance, state=STATE_MAP['withdrawing'])
 									self.Servers[args[1]].connections[args[0]].length = _reward_length
 									self.new_conns.append((args[1], args[0], util.DCSPEED, full_distance, STATE_MAP['withdrawing']))
+									self.Servers[args[1]].invested += _reward_length
 								else:
 									# shoot the kuruvi, 'whostile's are owned by their creators, so that takeover detection is simple
 									self.Servers[args[0]].new_connection(str(args[1]), util.DCSPEED/self.amult, full_distance, state=STATE_MAP['whostile'])
@@ -542,7 +543,7 @@ class Game:
 			
 			# check takeovers
 			for server in self.Servers:
-				if server.power <= 0:
+				if server.reserve <= 0:
 					# takeover is happening!!
 					winner = self.Servers[self.determine_takeover(server.index)]
 					message = "%d's %d pawned your server %d! @ turn(%d)+%2.4f" % (winner.owner, winner.index, server.index, self.turn, epoch_id/self.EPOCH_COUNT)
@@ -564,7 +565,8 @@ class Game:
 					server.owner = winner.owner
 					# withdraw all connections (if any)
 					for conn in server.connections.values():
-						conn.state = STATE_MAP['withdrawing']
+						if conn.state != STATE_MAP['whostile']:
+							conn.state = STATE_MAP['withdrawing']
 
 			# validate connections,
 			# remove a few if "in_danger"?
@@ -595,7 +597,7 @@ class Game:
 						elif _headons:
 							bakra = random.choice(_headons)
 						# still, you might not find a bakra
-						if bakra:
+						if bakra != None:
 							# found a bakra
 							bakra_conn = server.connections[bakra]
 							# notify user of this automatic, "uintended" operation
@@ -652,7 +654,7 @@ class Game:
 			# 'whostile' will win, DCSPEED requires normalisation, don't remove amult. You're dumb if you want to do that. Read code... and comments.
 			# print("Yes, whostile did win this game", whostile_srcs)
 			winner = random.choice(whostile_srcs)
-		if not winner:
+		if winner == None:
 			# choose the top attackers
 			winners = [sid for sid in actual_enemies if self.Servers[sid].connections[server.index].arate == max_arate]
 			if len(winners) == 1:

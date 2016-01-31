@@ -12,13 +12,16 @@ class myBot():
 		# initialise any persistent data structures (if needed)
 	
 	def do_setup(self, game):
-		pass
+		for i in range(game.server_count):
+			game.error_dump("%d: %s" % (i, game.Servers[i]))
 
 	def do_turn(self, game):
-		if game.turn == 21:
-			game.attack(0, 1, 0.3)
-		if game.turn == 35:
-			game.withdraw(0, 1, 0.8)
+		if game.turn == 8:
+			game.attack(0, 2, 0.3)
+		if game.turn == 25:
+			game.attack(0, 2, 0.4)
+		if game.turn == 100:
+			game.update_link(0, 2, 0.8)
 
 if __name__ == '__main__':
 	try:

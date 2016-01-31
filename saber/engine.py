@@ -197,6 +197,7 @@ def run_game(game, bot_details, options):
 					"status"       : bot_status,
 					"player_turns" : b_turns,
 					"score"        : game.get_scores(),
+					"Clusters"     : game.Clusters,
 					"game_length"  : turn}
 	json_ipstream = json.dumps(json_mybot_ipstream, separators=(',', ':'))
 	json_invalid  = json.dumps(json_mybot_invalid, separators=(',', ':'))
