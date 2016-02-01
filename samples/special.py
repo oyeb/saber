@@ -13,12 +13,13 @@ class myBot():
 	
 	def do_setup(self, game):
 		pass
-
 	def do_turn(self, game):
-		if game.turn == 10:
-			game.attack(1, 2, 0.4)
-		elif game.turn == 20:
-			game.withdraw(1, 2, 0.2)
+		if game.turn == 53:
+		 	game.attack(1,0,1)
+
+		game.pretty_dump_alerts()
+		game.pretty_dump_additions()
+		game.pretty_dump_deletions()
 
 if __name__ == '__main__':
 	try:

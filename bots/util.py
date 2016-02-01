@@ -99,7 +99,4 @@ class Connection:
 
 	@arate.setter
 	def arate(self, val):
-		if val < 0 or val > MAX_ARATE:
-			raise RuntimeError("Wrong 'new' attack_rate (%f) Acceptable[0, %f]" % (val, MAX_ARATE))
-		else:
-			self._arate = val
+		self._arate = val

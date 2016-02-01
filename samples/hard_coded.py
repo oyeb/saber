@@ -17,11 +17,7 @@ class myBot():
 
 	def do_turn(self, game):
 		if game.turn == 1:
-			game.attack(2, 0.4)
-		elif game.turn == 24:
-			game.update_link(2, 0.1)
-		elif game.turn == 26:
-			game.withdraw(2, 1.0)
+			game.attack(1,0, 0.68)
 
 	def get_closest_nodes(self, src_index):
 		sid_dist = []

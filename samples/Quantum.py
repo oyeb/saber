@@ -5,6 +5,9 @@ import random
 import time
 import util
 
+STATE_MAP = util.Connection.STATE_MAP
+INV_ST_MAP = util.Connection.INV_ST_MAP
+
 class UnkownGameStateParameter(Exception):
 	def __init__(self, line=None, key=None):
 		if line and key:
@@ -72,9 +75,10 @@ class ServerStack():
 				self.server_count = int(data) # number of other bots
 			else:
 				raise UnkownGameStateParameter(line, key)
-		self.my_nodes    = self.Clusters[self.my_id]
-		self.enemy_nodes = [server.index for server in self.Servers if server.owner != self.my_id and server.owner != -1]
-		self.neutrals    = [server.index for server in self.Servers if server.owner == -1]
+		if self.active == True:
+			self.my_nodes    = self.Clusters[self.my_id]
+			self.enemy_nodes = [server.index for server in self.Servers if server.owner != self.my_id and server.owner != -1]
+			self.neutrals    = [server.index for server in self.Servers if server.owner == -1]
 
 	def update_state(self, up_data):
 		"""
@@ -155,9 +159,10 @@ class ServerStack():
 				except:
 					raise UnkownGameStateParameter(line, key)
 		self.Clusters = _clusters
-		self.my_nodes    = self.Clusters[self.my_id]
-		self.enemy_nodes = [server.index for server in self.Servers if server.owner != self.my_id and server.owner != -1]
-		self.neutrals    = [server.index for server in self.Servers if server.owner == -1]
+		if self.active == True:
+			self.my_nodes    = self.Clusters[self.my_id]
+			self.enemy_nodes = [server.index for server in self.Servers if server.owner != self.my_id and server.owner != -1]
+			self.neutrals    = [server.index for server in self.Servers if server.owner == -1]
 
 	def dist_between(self, id1, id2):
 		"""
@@ -189,6 +194,37 @@ class ServerStack():
 	def error_dump(self, whatever):
 		sys.stderr.write(str(whatever)+"\n")
 		sys.stderr.flush()
+
+	def pretty_dump_alerts(self):
+		if self.news_alerts:
+			for notice in self.news_alerts:
+				turn_no, epoch_pct, _mode, info1, info2, info3 = notice
+				if _mode == 'p':
+					message = "%d's %d pawned your server %d! @ turn(%d)+%2.4f" % (info1, info2, info3, turn_no, epoch_pct)
+				elif _mode == 'w':
+					message = "Server %d is \"in-danger\". Game 'auto-withdrew' connection to %d (state:'%s') @ turn(%d)+%2.4f" % (info1, info2, INV_ST_MAP[info3], turn_no, epoch_pct) 
+				elif _mode == 'i':
+					message = "Turn %4d: Can't attack %d from %d due to insufficient resource. Need %f" % (turn_no, info1, info2, info3)
+				self.error_dump(message)
+
+	def pretty_dump_additions(self):
+		if self.news_additions:
+			for asid, vsid, arate, fdist, state in self.news_additions:
+				try:
+					message = "A new Connection from %d to %d (arate=%f; distance=%f) was made of type:%s @ t%d" % (asid, vsid, arate, fdist, INV_ST_MAP[state], self.turn)
+				except:
+					message = "A new Connection from %d to %s* (arate=%f; distance=%f) was made of type:%s @ t%d" % (asid, vsid, arate, fdist, INV_ST_MAP[state], self.turn)
+				self.error_dump(message)
+
+	def pretty_dump_deletions(self):
+		if self.news_additions:
+			for notice in self.news_deletions:
+				epct, asid, vsid, state = notice
+				try:
+					message = "Connection from %d to %d of type:%s was deleted @ t%d+%f!" % (asid, vsid, INV_ST_MAP[state], self.turn, epct)
+				except:
+					message = "Connection from %d to %s* of type:%s was deleted @ t%d+%f!" % (asid, vsid, INV_ST_MAP[state], self.turn, epct)
+				self.error_dump(message)
 
 	@staticmethod
 	def launch(bot=None):
