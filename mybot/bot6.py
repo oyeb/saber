@@ -15,19 +15,13 @@ class myBot():
 		pass
 
 	def do_turn(self, game):
-		if game.turn == 41:
-			game.attack(0,3,1)
-			game.attack(0,2,1)
-		if game.turn == 55:
-			game.update_link(0,3,0.1)
-			game.update_link(0,2,0.1)
-		if game.turn == 56:
-			game.attack(3,1,3)
-			game.attack(2,1,3)
-		if game.turn == 62:
-			game.withdraw(0,2,0)
-			game.withdraw(0,3,0)
-
+		if game.turn==4:
+			game.attack(0, 3, 0.6)
+		if game.turn==23:
+			game.withdraw(0, 3, 0.5)
+			game.attack(3, 1, 0.8)
+		if game.turn==70:
+			game.withdraw(3, 1, 0.7)
 		game.pretty_dump_alerts()
 		game.pretty_dump_additions()
 		game.pretty_dump_deletions()

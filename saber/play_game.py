@@ -86,10 +86,13 @@ game = quantum.Game(game_options, json_replay_list, json_notifications) #, json_
 mybot_dir = os.path.join(engine_options["base_dir"], engine_options["mybot_dir"])
 mybot = {	"fname"   : parser.get('mybot', 'name'),
 			"version" : parser.get('mybot', 'version')}
-if int( mybot['version'].split('.')[0] ) == 2:
-	mybot['cmd'] = "python2 %s" % os.path.join( mybot_dir, mybot['fname'])
-else:
-	mybot['cmd'] = "python %s" % os.path.join( mybot_dir, mybot['fname'])
+if ".py" in mybot['fname']:
+	if int( mybot['version'].split('.')[0] ) == 2:
+		mybot['cmd'] = "python2 %s" % os.path.join( mybot_dir, mybot['fname'])
+	else:
+		mybot['cmd'] = "python %s" % os.path.join( mybot_dir, mybot['fname'])
+elif ".prog" in mybot['fname'] or ".exe" in mybot['fname']:
+	mybot['cmd'] = "%s" % os.path.join( mybot_dir, mybot['fname'])
 
 use_case = parser.get('sample', 'use')
 if use_case != 'none':

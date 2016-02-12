@@ -16,8 +16,7 @@ class myBot():
 		self.closest = self.get_closest_nodes(game.my_nodes[0])
 
 	def do_turn(self, game):
-		if game.turn == 1:
-			game.attack(1,0, 0.68)
+		pass
 
 	def get_closest_nodes(self, src_index):
 		sid_dist = []

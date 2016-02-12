@@ -148,9 +148,9 @@ def run_game(game, bot_details, options):
 					bot_status[bid] = "eliminated"
 				options["game_log"].write("Poor bot%d has been pawned!" % bid)
 				options["game_log"].flush()
-				scores = "scores %s\nmy_score %d\n" % (' '.join(map(str, game.get_scores())), game.get_scores(bid))
-				status = "status %s\n" % ' '.join(bot_status)
-				finale = "end\n" + scores + status + "go\n"
+				scores = "scores~%s\nmy_score~%d\n" % (' '.join(map(str, game.get_scores())), game.get_scores(bid))
+				status = "status~%s\n" % ' '.join(bot_status)
+				finale = "end~end\n" + scores + status + "go\n"
 				bots[bid].write( finale )
 				input_logs[bid].write(finale)
 				input_logs[bid].flush()
@@ -169,9 +169,9 @@ def run_game(game, bot_details, options):
 		
 		for bid, bot in enumerate(bots):
 			if game.is_alive(bid):
-				scores = "scores %s\nmy_score  %d\n" % ( ' '.join(map(str, game.get_scores())), game.get_scores(bid) )
-				status = "status %s\nmy_status %s\n" % ( ' '.join(map(str, bot_status)), bot_status[bid] )
-				finale = "end\n" + scores + status + "go\n"
+				scores = "scores %s\nmy_score~%d\n" % ( ' '.join(map(str, game.get_scores())), game.get_scores(bid) )
+				status = "status %s\nmy_status~%s\n" % ( ' '.join(map(str, bot_status)), bot_status[bid] )
+				finale = "end~end\n" + scores + status + "go\n"
 				input_logs[bid].write(finale)
 				input_logs[bid].flush()
 				bot.write(finale)

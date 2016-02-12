@@ -4,7 +4,7 @@ loadtime=2
 turns=30
 points=1
 _map="maps/test.map"
-python3 saber/ppll.py
+python3 saber/play_game.py
 
 # python3 saber/play_game.py\
 # 					-m  $_map\
