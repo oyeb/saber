@@ -53,46 +53,47 @@ function drawBG() {
 function drawDebug() {
 
     var debug = $('.debug');
-    
-    
-    for (var i = 0;input_stream.length > 0 &&  i < input_stream[turn_no].length; i++) {   
     debug.html('');
-    var data = ""; 
-        var str = input_stream[turn_no][i].split('\n');
-        data += "<div>";
-        for (var j = 0; j < str.length; j++) {
-            data += "<p>" + str[j] + "</p>";
+    var data = "";
+    for (var k = 0; input_stream.length > 0 && k < input_stream.length; k++) {
+        data += "Team : " + LEGEND[k].name + "\n";
+        for (var i = 0; input_stream[k].length > 0 && i < input_stream[k][turn_no].length; i++) {
+            var str = input_stream[k][turn_no][i].split('\n');
+            data += "<div>";
+            for (var j = 0; j < str.length; j++) {
+                data += "<p>" + str[j] + "</p>";
+            }
+            data += "</div>";
         }
-        data += "</div>";
-        debug.append(data);
     }
-
+    debug.append(data);
 
     var stream = $('#stream');
     stream.html('   ');
     var data = "<div>";
     data += "<p>Turn No : " + turn_no + "</p>";
-    for (var i = 0; val_stream.length > 0 && i < val_stream[turn_no].length; i++) {
+    for (var j = 0; j < LEGEND.length; j++) {
+        for (var i = 0; val_stream[j].length > 0 && i < val_stream[j][turn_no].length; i++) {
 
-        data += "<p class='val'>" + val_stream[turn_no][i] + "</p>";
-    }
-    for (var i = 0; ign_stream.length > 0 && i < ign_stream[turn_no].length; i++) {
+            data += "<p class='val'>" + val_stream[j][turn_no][i] + "</p>";
+        }
+        for (var i = 0; ign_stream[j].length > 0 && i < ign_stream[j][turn_no].length; i++) {
 
-        data += "<p class='ign'>" + ign_stream[turn_no][i] + "</p>";
-    }
-    for (var i = 0; inv_stream.length > 0 && i < inv_stream[turn_no].length; i++) {
+            data += "<p class='ign'>" + ign_stream[j][turn_no][i] + "</p>";
+        }
+        for (var i = 0; inv_stream[j].length > 0 && i < inv_stream[j][turn_no].length; i++) {
 
-        data += "<p class='inv'>" + inv_stream[turn_no][i] + "</p>";
+            data += "<p class='inv'>" + inv_stream[j][turn_no][i] + "</p>";
+        }
     }
     data += "</div>";
     stream.append(data);
 
-
-        var notify = $('.notification');
+    var notify = $('.notification');
     var data_n = "";
     notify.html('');
     data_n += "<p>Turn No : " + turn_no + "</p>";
-    for (var i = 0; i < notifications[turn_no].length; i++) {
+    for (var i = 0; notifications.length > 0 && i < notifications[turn_no].length; i++) {
         data_n += "<div>";
         if (notifications[turn_no][i].type == 'p') {
             data_n += "<p>Action Occurred: Server Lost</p>";
@@ -235,105 +236,117 @@ function render(turn) {
     drawHealth();
     drawSignals();
     drawDebug();
-    console.log()
 }
-
 
 function preprocess() {
 
-    for (var i = 0; MYBOT_IP_STREAM.length > 0 && i < MYBOT_IP_STREAM.length;) {
-        var turn = MYBOT_IP_STREAM[i].split('\n')[0].split('~')[1];
-        input_stream[turn] = [];
-        var temp = MYBOT_IP_STREAM[i].split('\n')[0].split('~')[1];
-        while (temp == turn && i < MYBOT_IP_STREAM.length) {
-            var str = MYBOT_IP_STREAM[i];
-            input_stream[turn].push(str);
-            i++;
-            if (i < MYBOT_IP_STREAM.length)
-                temp = MYBOT_IP_STREAM[i].split('\n')[0].split('~')[1];
+    for (var k = 0; IP_STREAMS.length > 0 && k < IP_STREAMS.length; k++) {
+            input_stream[k] = [];
+            for (var i = 0; i < IP_STREAMS[k].length;) {
+                var turn = IP_STREAMS[k][i].split('\n')[0].split('~')[1];
+                input_stream[k][turn] = [];
+                var temp = IP_STREAMS[k][i].split('\n')[0].split('~')[1];
+                while (temp == turn && i < IP_STREAMS[k].length) {
+                    var str = IP_STREAMS[k][i];
+                    input_stream[k][turn].push(str);
+                    i++;
+                    if (i < IP_STREAMS[k].length)
+                        temp = IP_STREAMS[k][i].split('\n')[0].split('~')[1];
+                }
+            }
         }
-    }
-    for (var i = 0, j = 0; MYBOT_VAL_STREAM.length > 0 && i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn;) {
-        var turn = MYBOT_VAL_STREAM[j].turn;
-        while (i != turn) {
-            val_stream[i] = [];
-            i++;
-        }
-        val_stream[i] = [];
-        while (turn == i && j < MYBOT_VAL_STREAM.length) {
-            for (var k = 0; k < MYBOT_VAL_STREAM[j].moves.length; k++) {
-            val_stream[i].push(MYBOT_VAL_STREAM[j].moves[k]);
-        }
-            j++;
-            if (j < MYBOT_VAL_STREAM.length)
-                turn = MYBOT_VAL_STREAM[j].turn;
-        }
-        i++;
-        if (j < MYBOT_VAL_STREAM.length) {
-            continue;
-        } else {
-            while (i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn) {
-                val_stream[i] = [];
+
+    for (var p = 0; VAL_STREAMS.length > 0 && p < VAL_STREAMS.length; p++) {
+        val_stream[p] = [];
+        for (var i = 0, j = 0; VAL_STREAMS[p].length > 0 && i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn;) {
+            var turn = VAL_STREAMS[p][j].turn;
+            while (i != turn) {
+                val_stream[p][i] = [];
                 i++;
+            }
+            val_stream[p][i] = [];
+            while (turn == i && j < VAL_STREAMS[p].length) {
+                for (var k = 0; k < VAL_STREAMS[p][j].moves.length; k++) {
+                    val_stream[p][i].push(VAL_STREAMS[p][j].moves[k]);
+                }
+                j++;
+                if (j < VAL_STREAMS[p].length)
+                    turn = VAL_STREAMS[p][j].turn;
+
+            }
+            i++;
+            if (j < VAL_STREAMS[p].length) {
+                continue;
+            } else {
+                while (i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn) {
+                    val_stream[p][i] = [];
+                    i++;
+                }
             }
         }
     }
 
-    for (var i = 0, j = 0; MYBOT_IGN_STREAM.length > 0 && i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn;) {
-        var turn = MYBOT_IGN_STREAM[j].turn;
-        while (i != turn) {
-            ign_stream[i] = [];
-            i++;
-        }
-        ign_stream[i] = [];
-        while (turn == i && j < MYBOT_IGN_STREAM.length) {
-            for (var k = 0; k < MYBOT_IGN_STREAM[j].moves.length; k++) {
-            ign_stream[i].push(MYBOT_IGN_STREAM[j].moves[k]);
-        }
-            j++;
-            if (j < MYBOT_IGN_STREAM.length)
-                turn = MYBOT_IGN_STREAM[j].turn;
-        }
-        i++;
-        if (j < MYBOT_IGN_STREAM.length) {
-            continue;
-        } else {
-            while (i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn) {
-                ign_stream[i] = [];
+    for (var p = 0; IGN_STREAMS.length > 0 && p < INV_STREAMS.length; p++) {
+        inv_stream[p] = [];
+        for (var i = 0, j = 0; INV_STREAMS[p].length > 0 && i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn;) {
+            var turn = INV_STREAMS[p][j].turn;
+            while (i != turn) {
+                inv_stream[p][i] = [];
                 i++;
+            }
+            inv_stream[p][i] = [];
+            while (turn == i && j < INV_STREAMS[p].length) {
+                for (var k = 0; k < INV_STREAMS[p][j].moves.length; k++) {
+                    inv_stream[p][i].push(INV_STREAMS[p][j].moves[k]);
+                }
+                j++;
+                if (j < IGN_STREAMS[p].length)
+                    turn = IGN_STREAMS[p][j].turn;
+            }
+            i++;
+            if (j < INV_STREAMS[p].length) {
+                continue;
+            } else {
+                while (i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn) {
+                    inv_stream[p][i] = [];
+                    i++;
+                }
+            }
+        }
+    }
+    for (var p = 0; IGN_STREAMS.length > 0 && p < IGN_STREAMS.length; p++) {
+        ign_stream[p] = [];
+        for (var i = 0, j = 0; IGN_STREAMS[p].length > 0 && i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn;) {
+            var turn = IGN_STREAMS[p][j].turn;
+            while (i != turn) {
+                ign_stream[p][i] = [];
+                i++;
+            }
+            ign_stream[p][i] = [];
+            while (turn == i && j < INV_STREAMS[p].length) {
+                for (var k = 0; k < IGN_STREAMS[p][j].moves.length; k++) {
+                    ign_stream[p][i].push(IGN_STREAMS[p][j].moves[k]);
+                }
+                j++;
+                if (j < INV_STREAMS[p].length)
+                    turn = INV_STREAMS[p][j].turn;
+            }
+            i++;
+            if (j < IGN_STREAMS[p].length) {
+                continue;
+            } else {
+                while (i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn) {
+                    ign_stream[p][i] = [];
+                    i++;
+                }
             }
         }
     }
 
-    for (var i = 0, j = 0; MYBOT_INV_STREAM.length > 0 && i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn;) {
-        var turn = MYBOT_INV_STREAM[j].turn;
-        while (i != turn) {
-            inv_stream[i] = [];
-            i++;
-        }
-        inv_stream[i] = [];
-        while (turn == i && j < MYBOT_INV_STREAM.length) {
-            for (var k = 0; k < MYBOT_INV_STREAM[j].moves.length; k++) {
-            inv_stream[i].push(MYBOT_INV_STREAM[j].moves[k]);
-        }
-            j++;
-            if (j < MYBOT_INV_STREAM.length)
-                turn = MYBOT_INV_STREAM[j].turn;
-        }
-        i++;
-        if (j < MYBOT_INV_STREAM.length) {
-            continue;
-        } else {
-            while (i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn) {
-                inv_stream[i] = [];
-                i++;
-            }
-        }
-    }
-
-    for (var i = 0, j = 0;GAME_NOTIFICATIONS.length > 0 &&  i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn;) {
+    for (var i = 0, j = 0; GAME_NOTIFICATIONS.length > 0 && i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn;) {
         var turn = GAME_NOTIFICATIONS[j].turn;
-        while (i != turn) {
+        while (i != turn && i <= GAME_REPLAY[GAME_REPLAY.length - 1].turn) {
+
             notifications[i] = [];
             i++;
         }
@@ -354,12 +367,9 @@ function preprocess() {
             }
         }
     }
-
 }
 
 function main() {
-
-
     if (unpause) {
         var current = Date.now();
         var dt = (current - lastTime) / 1000.0;
@@ -373,33 +383,12 @@ function main() {
             connections = current_connections;
             servers = current_servers;
         }
-        /*
-        else{
-            for(var i=0;i<next_connections.length;i++){
-                connections[i].length = current_connections[i].length + (dt)*(next_connections[i].length -current_connections[i].length);
-            }
-            for(var i=0;i<servers.length;i++){
-                servers[i].reserve +=  dt*(next_servers[i].reserve - servers[i].reserve);
-            }
-            animate  = ((count%turntime)/turntime);
-            if(animate > 1){
-                animate = 1;
-            }
-        }*/
+
         if (turn < GAME_REPLAY.length - 1) {
             count++;
             turn_no = GAME_REPLAY[turn].turn;
             render(turn);
             requestAnimFrame(main);
-        } else {
-            /*$('#display_score').show( "slow", function() {
-            var score = "";
-            for(var i=0;i<GAME_START.bot_count;i++){
-                score += "<p>Bot "+ (i+1) + ":"+ GAME_END.scores[i] +"</p>";
-            }
-            $('#score').html(score);
-        });
-        */
         }
     } else {
         turn_no = GAME_REPLAY[turn].turn;
@@ -411,10 +400,7 @@ function main() {
         render(turn);
         requestAnimFrame(main);
     }
-
-
 }
-
 
 function init() {
 
@@ -434,8 +420,7 @@ function init() {
         serverImages[serverImages.length - 1].src = "img/server" + i + ".png";
     };
 
-    for (var i = -1; i < GAME_START.bot_count; i++) {
-        console.log(i);
+    for (var i = -1; i < LEGEND.length; i++) {
         var color = "";
         switch (i) {
             case 0:
@@ -454,12 +439,15 @@ function init() {
                 color = colors[4];
                 break;
         }
-        console.log("<tr><td class='tg-g145'>" + i + "</td><td class='tg-dgof'>" + color + "</td></tr>");
-        $('.tg').append("<tr><td class='tg-g145'>" + i + "</td><td class='tg-dgof'>" + color + "</td></tr>");
+        if (i != -1)
+            $('.tg').append("<tr><td class='tg-g145'>" + i + "</td><td class='tg-g145'>" + LEGEND[i].name + "</td><td class='tg-dgof'>" + color + "</td></tr>");
+        else
+            $('.tg').append("<tr><td class='tg-g145'>Neutral</td><td class='tg-g145'>Neutral</td><td class='tg-dgof'>" + color + "</td></tr>");
     }
 
     lastTime = Date.now();
     preprocess();
+
     main();
 }
 

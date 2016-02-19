@@ -29,10 +29,10 @@ def run_game(game, bot_details, options):
 	output_logs = [open(os.path.join(options["log_dir"], "bot%d.output.log" % i), 'w') for i in range(bot_count)]
 	error_logs  = [open(os.path.join(options["log_dir"], "bot%d.error.log" % i), 'w') for i in range(bot_count)]
 
-	json_mybot_ipstream = []
-	json_mybot_invalid  = []
-	json_mybot_valid    = []
-	json_mybot_ignored  = []
+	json_ipstream = [[] for _ in range(game.bot_count)]
+	json_invalid  = [[] for _ in range(game.bot_count)]
+	json_valid    = [[] for _ in range(game.bot_count)]
+	json_ignored  = [[] for _ in range(game.bot_count)]
 
 	# prepare list of bots (houses)
 	bots = []
@@ -41,7 +41,7 @@ def run_game(game, bot_details, options):
 	turn = 0
 	try:
 		for bid, detail in enumerate(bot_details):
-			s = house.get_sandbox(options["arena"])
+			s = house.get_sandbox(options["base_dir"])
 			s.start(detail['cmd'])
 			bots.append(s)
 			b_turns.append(0)
@@ -83,7 +83,7 @@ def run_game(game, bot_details, options):
 						bot.write(update)
 						input_logs[bid].write(update)
 						b_turns[bid] = turn
-						json_mybot_ipstream.append(update)
+						json_ipstream[bid].append(update)
 					input_logs[bid].flush()
 			
 			if turn > 0:
@@ -118,10 +118,10 @@ def run_game(game, bot_details, options):
 						output_logs[bid].write('# turn %s\n' % turn)
 						if valid:
 							output_logs[bid].write('\n'.join(valid)+'\n')
-							json_mybot_valid.append({"turn"  : turn,
+							json_valid[bid].append({"turn"  : turn,
 													"moves" : valid[:]})
 						if ignored:
-							json_mybot_ignored.append({"turn"  : turn,
+							json_ignored[bid].append({"turn"  : turn,
 													"moves" : ignored[:]})
 							error_logs[bid].write('turn %4d bot %s ignored actions:\n' % (turn, bid))
 							error_logs[bid].write('\n'.join(ignored)+'\n')
@@ -129,7 +129,7 @@ def run_game(game, bot_details, options):
 
 							output_logs[bid].write('\n'.join(ignored)+'\n')
 						if invalid:
-							json_mybot_invalid.append({"turn"  : turn,
+							json_invalid[bid].append({"turn"  : turn,
 													"moves" : invalid[:]})
 							error_logs[bid].write('turn %4d bot %s invalid actions:\n' % (turn, bid))
 							error_logs[bid].write('\n'.join(invalid)+'\n')
@@ -199,10 +199,11 @@ def run_game(game, bot_details, options):
 					"score"        : game.get_scores(),
 					"Clusters"     : game.Clusters,
 					"game_length"  : turn}
-	json_ipstream = json.dumps(json_mybot_ipstream, separators=(',', ':'))
-	json_invalid  = json.dumps(json_mybot_invalid, separators=(',', ':'))
-	json_ignored  = json.dumps(json_mybot_ignored , separators=(',', ':'))
-	json_valid    = json.dumps(json_mybot_valid , separators=(',', ':'))
+
+	json_ipstream_dumps = json.dumps(json_ipstream, separators=(',', ':'))
+	json_invalid_dumps  = json.dumps(json_invalid, separators=(',', ':'))
+	json_ignored_dumps  = json.dumps(json_ignored , separators=(',', ':'))
+	json_valid_dumps    = json.dumps(json_valid , separators=(',', ':'))
 
 	# close all file descriptors!
 	for f in input_logs:
@@ -213,7 +214,7 @@ def run_game(game, bot_details, options):
 		f.close()
 
 	# done
-	return game_result, json_start, json_end, json_ipstream, json_invalid, json_ignored, json_valid
+	return game_result, json_start, json_end, json_ipstream_dumps, json_invalid_dumps, json_ignored_dumps, json_valid_dumps
 #
 #
 #
