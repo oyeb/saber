@@ -3,6 +3,7 @@ import random, math, json, copy
 import map_util
 import util
 
+BORING_THRESHOLD = 75
 STATE_MAP = util.Connection.STATE_MAP
 INV_ST_MAP = {0: 'making', 1: 'connected', 2: 'withdrawing', 3: 'headon', 4: 'whostile'}
 VALID_ORDERS = {'a':('attack', 3),   # from, to, rate
@@ -37,6 +38,8 @@ class Game:
 		self.score_pawn    = options["sc_pawn"]
 		self.score_loss    = options["sc_loss"]
 		self.EPOCH_COUNT   = options["epochs"]
+
+		self.age = BORING_THRESHOLD
 
 	def start_game(self):
 		self.Clusters = {}
@@ -390,8 +393,8 @@ class Game:
 									inv_conn.state = STATE_MAP['headon']
 							else:
 								# not enuf reserve, notify user!
-								message = "Can't attack %d from %d due to insufficient resource. Need %f" % (args[0], args[1], check_length)
-								error_list[pid].append(('i', self.turn, 0.0, (args[0], args[1], check_length), message ))
+								message = "Can't attack %d from %d due to insufficient resource. Need %f" % (args[1], args[0], check_length)
+								error_list[pid].append(('i', self.turn, 0.0, (args[1], args[0], check_length), message ))
 								self.jnotify.append({"turn"     : self.turn,
 													"bot_id"    : pid,
 													"epoch"     : 0.0,
@@ -746,13 +749,25 @@ class Game:
 		# not killed by engine (due to sandbox error or other bot malfunction) AND not dominated by other players
 		# print("#", player, (not self.killed[player]) and self.active[player])
 		return (not self.killed[player]) and self.active[player]
-
+		
 	def kill_player(self, player):
 		self.killed[player] = True
 		self.active[player] = False
 
 	def over(self):
 		# if game is decided before max_turns, should return True
+		if self.notify_logs:
+			for notices in self.notify_logs:
+				if notices:
+					for item in notices:
+						if item[0] == 'p':
+							self.age = BORING_THRESHOLD
+		self.age -= 1
+		if self.age == 0:
+			return True
+		for cl in self.Clusters:
+			if len(self.Clusters[cl]) == self.server_count:
+				return True
 		return False
 
 	def get_scores(self, player_id=None):

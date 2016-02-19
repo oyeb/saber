@@ -91,7 +91,10 @@ class myBot():
 						# others are also connected
 						grace = game.Servers[conn.victim].power / (self.allrates[conn.victim]['dr'] + conn.arate*self.amult)
 						if grace > 1:
-							game.update_link(msid, conn.victim, 0)
+							if grace < 4:
+								game.update_link(msid, conn.victim, 0)
+							else:
+								game.withdraw(msid, conn.victim, 1)
 						else:
 							game.update_link(msid, conn.victim, 2)
 

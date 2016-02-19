@@ -15,6 +15,7 @@ import leaders
 DEBUG = False
 SHOW_ASSIGNMENT = True
 SHOW_RESULT = True
+random.seed()
 
 def insert_safely(cursor, myquery):
 	try:
@@ -125,7 +126,6 @@ else:
 			raise RuntimeError("Invalid Bot Name %s @ %s" % (fname, folder))
 		combo.append(detail)
 	all_combinations = [combo]
-print(all_combinations)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN LOOP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 print("CWD", os.getcwd(), '\n')
@@ -202,8 +202,8 @@ for combo in all_combinations:
 		print("status :\t", result['status'])
 		print("pturns :\t", result['player_turns'])
 	# update ELO ratings!!
+	[print(new_rating) for new_rating in board_mnt.do_rating([detail['id'] for detail in bot_details], result['score'], result['status'], result['player_turns'])]
 	if len(cmd_args.bots) == 0:
-		[print(new_rating) for new_rating in board_mnt.do_rating([detail['id'] for detail in bot_details], result['score'], result['status'], result['player_turns'])]
 		# save the replay in DB
 		insq = "insert into %s values ( '%s'" % (mapfile, str(game_options["game_id"]))
 		for detail in bot_details:

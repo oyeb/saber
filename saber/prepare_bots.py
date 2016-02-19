@@ -137,8 +137,8 @@ def prepare(teams):
 					break
 
 			print("\tCopying files...")
-			shutil.copy2('../bin/Quantum.o', folder)
-			shutil.copy2('../bin/util.o', folder)
+			shutil.copy2('../bin/Quantum.cpp', folder)
+			shutil.copy2('../bin/util.cpp', folder)
 			shutil.copy2('../bin/Quantum.h', folder)
 			shutil.copy2('../bin/util.h', folder)
 			

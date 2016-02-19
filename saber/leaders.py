@@ -28,11 +28,12 @@ class Leaderboard:
 				sm.append(1)
 			elif st == 'survived':
 				sm.append(2)
-		zipped = [(sm[i], pturns[i], scores[i], team_ids[i]) for i in range(len(team_ids))]
+		zipped = [(sm[i], scores[i], pturns[i], team_ids[i]) for i in range(len(team_ids))]
 		rgroup = sorted(zipped, reverse=True)
+		print("PPPP", rgroup)
 
 		rating_for = []
-		for score, tid in rgroup:
+		for s, pt, score, tid in rgroup:
 			rating_for.append((self.teams_dict[tid]['rating'],))
 
 		rated_groups = self.env.rate(rating_for, weights=weights)
@@ -41,7 +42,7 @@ class Leaderboard:
 
 	def save_ratings(self, rgroup, rated_groups):
 		for i in range(len(rgroup)):
-			self.teams_dict[rgroup[i][1]]['rating'] = rated_groups[i][0]
+			self.teams_dict[rgroup[i][3]]['rating'] = rated_groups[i][0]
 
 	def commit(self, tname):
 		for tobj in self.teams_dict.values():
