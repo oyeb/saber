@@ -25,8 +25,8 @@ class myBot():
 		game.pretty_dump_alerts()
 		game.pretty_dump_additions()
 		game.pretty_dump_deletions()
-		
-		
+		for conn in game.Servers[3].connections.values():
+			game.error_dump(conn)
 if __name__ == '__main__':
 	try:
 		ServerStack.launch(myBot())

@@ -33,6 +33,7 @@ class Game:
 		util.BONUS         = options["bonus"]
 		util.REWARD        = options["reward"]
 		self.amult         = options["amult"]
+		self.amult_score   = options["amult_score"]
 		self.score_pawn    = options["sc_pawn"]
 		self.score_loss    = options["sc_loss"]
 		self.EPOCH_COUNT   = options["epochs"]
@@ -509,6 +510,16 @@ class Game:
 						# but servers need health updates
 						server.update_pow(-conn.arate / self.EPOCH_COUNT, 0)
 						self.Servers[v_sid].update_pow(-conn.arate * self.amult / self.EPOCH_COUNT, 0)
+						# score updates
+						delta_arate = conn.arate - self.Servers[v_sid].connections[server.index].arate
+						# delta = mine - his
+						# Award myself. He will award himself.
+						if delta_arate < 0:
+							# attacker is more powerful than me
+							self.scores[server.owner] -= self.amult_score * (delta_arate / self.EPOCH_COUNT)
+						elif delta_arate > 0:
+							# I am more powerful
+							self.scores[server.owner] += 2 * self.amult_score * (delta_arate / self.EPOCH_COUNT)
 					elif conn.state == STATE_MAP['whostile']:
 						if conn.length - (util.DCSPEED / self.EPOCH_COUNT) < 0:
 							self.del_conns_epoch.append((epoch_id/self.EPOCH_COUNT, conn.attacker, v_sid, conn.state))
@@ -526,6 +537,8 @@ class Game:
 							else:
 								# attack until this vsid is not attacker's
 								self.Servers[int(v_sid)].update_pow(-(util.DCSPEED / self.EPOCH_COUNT), 0)
+								self.scores[server.owner] += 2 * self.amult_score * (util.DCSPEED / self.amult / self.EPOCH_COUNT)
+								self.scores[self.Servers[int(v_sid)].owner] -= self.amult_score * (util.DCSPEED / self.amult / self.EPOCH_COUNT)
 							conn.length -= util.DCSPEED / self.EPOCH_COUNT
 					else:
 						# already connected
@@ -533,7 +546,9 @@ class Game:
 							# if friendly bot, don't inflict damage
 							self.Servers[v_sid].update_pow(conn.arate / self.EPOCH_COUNT, 0)
 						else:
+							self.scores[self.Servers[v_sid].owner] -= self.amult_score * (conn.arate / self.EPOCH_COUNT)
 							self.Servers[v_sid].update_pow(-conn.arate * self.amult / self.EPOCH_COUNT, 0)
+							self.scores[server.owner] += 2 * self.amult_score * (conn.arate / self.EPOCH_COUNT)
 						server.update_pow(-conn.arate / self.EPOCH_COUNT, 0)
 			# delete the dead connection objects!!
 			for dcon in self.del_conns_epoch:
@@ -639,29 +654,37 @@ class Game:
 		normal_srcs = [sid for sid in self.inv_cmap[server.index] if sid not in self.Clusters[server.owner]]
 		# also include 'whostile' connections to this server
 		whostile_srcs = [sid for sid in self.inv_cmap[str(server.index)] if sid not in self.Clusters[server.owner]]
-		max_arate = 0
 		winner = None
 		actual_enemies = []
 		for src_id in normal_srcs:
 			# is this guy even connected
 			if self.Servers[src_id].connections[server.index].state in (STATE_MAP['headon'], STATE_MAP['connected']):
 				actual_enemies.append(src_id)
-				# what rate is this guy attacking me?
-				src_arate = self.Servers[src_id].connections[server.index].arate
-				if src_arate > max_arate:
-					max_arate = src_arate
-		if max_arate < util.DCSPEED/self.amult and whostile_srcs:
-			# 'whostile' will win, DCSPEED requires normalisation, don't remove amult. You're dumb if you want to do that. Read code... and comments.
-			# print("Yes, whostile did win this game", whostile_srcs)
-			winner = random.choice(whostile_srcs)
-		if winner == None:
-			# choose the top attackers
-			winners = [sid for sid in actual_enemies if self.Servers[sid].connections[server.index].arate == max_arate]
-			if len(winners) == 1:
-				winner = winners[0]
-			else:
-				# recursive powers!
-				winner = random.choice(winners)
+
+		attack_groups = [0 for _ in range(self.bot_count)]
+		for enemy_server_id in actual_enemies:
+			attack_groups[self.Servers[enemy_server_id].owner] += self.Servers[enemy_server_id].connections[server.index].arate
+		for enemy_server_id in whostile_srcs:
+			attack_groups[self.Servers[enemy_server_id].owner] += util.DCSPEED / self.amult
+		n_max_arate = 0
+		winning_cluster = None
+		for bid, aggregate in enumerate(attack_groups):
+			if n_max_arate < aggregate:
+				winning_cluster = bid
+				n_max_arate = aggregate
+		candidates = []
+		for cserver_id in self.Clusters[winning_cluster]:
+			try:
+				attacker = self.Servers[cserver_id].connections[str(server.index)].attacker
+				candidates.append(attacker)
+			except:
+				try:
+					conn = self.Servers[cserver_id].connections[server.index]
+					if conn.state in (STATE_MAP['connected'], STATE_MAP['headon']):
+						candidates.append(conn.attacker)
+				except:
+					continue
+		winner = random.choice(candidates)
 		return winner
 
 	def get_power_rates(self, sid, mode='real'):

@@ -113,14 +113,14 @@ class ServerStack():
 			elif key == 'cd':
 				try:
 					epoch_pct, a_sid, v_sid, _state = data.split()
-					if v_sid in self.Servers[int(a_sid)].connections.keys():
-						# a 'whostile' is deleted
-						del self.Servers[int(a_sid)].connections[v_sid]
-						self.news_deletions.append((float(epoch_pct), int(a_sid), v_sid, int(_state)))
-					else:
-						# a 'withdrawing' is deleted
-						del self.Servers[int(a_sid)].connections[int(v_sid)]
-						self.news_deletions.append((float(epoch_pct), int(a_sid), int(v_sid), int(_state)))
+					try:
+						epoch_pct, a_sid, v_sid, _state = float(epoch_pct), int(a_sid), int(v_sid), int(_state)
+						del self.Servers[a_sid].connections[v_sid]
+						self.news_deletions.append((epoch_pct, a_sid, v_sid, _state))
+					except (KeyError, ValueError):
+						epoch_pct, a_sid, v_sid, _state = float(epoch_pct), int(a_sid), v_sid[1:-1], int(_state)
+						del self.Servers[a_sid].connections[v_sid]
+						self.news_deletions.append((epoch_pct, a_sid, v_sid, _state))
 				except:
 					raise UnkownGameStateParameter(line, key)
 			elif key == 'cn':
@@ -131,7 +131,7 @@ class ServerStack():
 						self.Servers[a_sid].new_connection(v_sid, arate, fdist, _state)
 						self.news_additions.append((int(a_sid), int(v_sid), float(arate), float(fdist), int(_state)))
 					except (KeyError, ValueError):
-						a_sid, v_sid, arate, fdist, _state = int(a_sid), v_sid, float(arate), float(fdist), int(_state)
+						a_sid, v_sid, arate, fdist, _state = int(a_sid), v_sid[1:-1], float(arate), float(fdist), int(_state)
 						self.Servers[a_sid].new_connection(v_sid, arate, fdist, _state)
 						self.news_additions.append((int(a_sid), v_sid, float(arate), float(fdist), int(_state)))
 				except:
@@ -143,7 +143,7 @@ class ServerStack():
 						a_sid, v_sid, arate, state, length = int(a_sid), int(v_sid), float(arate), int(state), float(length)
 						self.Servers[a_sid].connections[v_sid].sync(arate, state, length)
 					except (KeyError, ValueError):
-						a_sid, v_sid, arate, state, length = int(a_sid), v_sid, float(arate), int(state), float(length)
+						a_sid, v_sid, arate, state, length = int(a_sid), v_sid[1:-1], float(arate), int(state), float(length)
 						self.Servers[a_sid].connections[v_sid].sync(arate, state, length)
 				except:
 					raise UnkownGameStateParameter(line, key)

@@ -40,7 +40,8 @@ class Server:
 
 	def new_connection(self, v_sid, arate, distance, state):
 		if v_sid in self.connections.keys():
-			raise RuntimeError("Already connected to %d from %d. Something wrong with quantum.py" %(v_sid, self.index))
+			# raise RuntimeError("Already connected to %d from %d. Something wrong with quantum.py" %(v_sid, self.index))
+			self.connections[v_sid].state = state
 		else:
 			self.connections[v_sid] = Connection(self.index, v_sid, arate, distance, state)
 

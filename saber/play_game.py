@@ -37,21 +37,22 @@ engine_options = {	"turntime"    : float,
 for option in parser.options('Engine'):
 		engine_options[option] = engine_options[option](parser.get('Engine', option))
 
-game_options = {"turntime"  : engine_options["turntime"],
-				"loadtime"  : engine_options["loadtime"],
-				"turns"     : engine_options["turns"],
-				"base_dir"  : os.getcwd(),
-				"epochs"    : engine_options["epochs"],
-				"threshold" : engine_options["threshold"],
-				"cspeed"    : float,
-				"dcspeed"   : float,
-				"max_arate" : float,
-				"regen"     : float,
-				"amult"     : float,
-				"sc_pawn"   : float,
-				"sc_loss"   : float,
-				"bonus"     : int,
-				"reward"    : int,}
+game_options = {"turntime"      : engine_options["turntime"],
+				"loadtime"      : engine_options["loadtime"],
+				"turns"         : engine_options["turns"],
+				"base_dir"      : os.getcwd(),
+				"epochs"        : engine_options["epochs"],
+				"threshold"     : engine_options["threshold"],
+				"cspeed"        : float,
+				"dcspeed"       : float,
+				"max_arate"     : float,
+				"regen"         : float,
+				"amult"         : float,
+				"amult_score"   : float,
+				"sc_pawn"       : float,
+				"sc_loss"       : float,
+				"bonus"         : int,
+				"reward"        : int,}
 for option in parser.options('Game'):
 	game_options[option] = game_options[option](parser.get('Game', option))
 
@@ -62,9 +63,9 @@ sample_bots = [ {"version" : "3.5",
 				{"version" : "3.5",
 				 "fname"   : "hard_coded.py",
 				 "cmd"     : None},
-				 {"version" : "3.5",
-				  "fname"   : "special.py",
-				  "cmd"     : None}]
+				{"version" : "3.5",
+				 "fname"   : "special.py",
+				 "cmd"     : None}]
 
 sample_dir = os.path.join(engine_options["base_dir"], engine_options["sample_dir"])
 for bot in sample_bots:
@@ -84,15 +85,15 @@ json_notifications = []
 game = quantum.Game(game_options, json_replay_list, json_notifications) #, json_notifications)
 
 mybot_dir = os.path.join(engine_options["base_dir"], engine_options["mybot_dir"])
-mybot = {	"fname"   : parser.get('mybot', 'name'),
-			"version" : parser.get('mybot', 'version')}
+mybot = {	"fname"   : parser.get('mybot', 'name')}
 if ".py" in mybot['fname']:
+	mybot["version"] = parser.get('mybot', 'version')
 	if int( mybot['version'].split('.')[0] ) == 2:
 		mybot['cmd'] = "python2 %s" % os.path.join( mybot_dir, mybot['fname'])
 	else:
 		mybot['cmd'] = "python %s" % os.path.join( mybot_dir, mybot['fname'])
 elif ".prog" in mybot['fname'] or ".exe" in mybot['fname']:
-	mybot['cmd'] = "%s" % os.path.join( mybot_dir, mybot['fname'])
+	mybot['cmd'] = "./%s" % os.path.join( mybot_dir, mybot['fname'])
 
 use_case = parser.get('sample', 'use')
 if use_case != 'none':
