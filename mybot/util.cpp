@@ -127,7 +127,7 @@ void Server::new_connection(int v_sid, float arate, float distance, int state){
 	bool connected = connection_exists(v_sid, state);
 	if(connected  == true){
 		string error = "Already connected to " + to_string(v_sid) + "from " + to_string(index) +". Something wrong with quantum.py";
-		throw runtime_error(error);
+		//throw runtime_error(error);
 	}else{
 		connections.push_back(Connection(index, v_sid, arate, distance, state));
 	}
