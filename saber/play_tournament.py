@@ -33,6 +33,7 @@ board_mnt = leaders.Leaderboard()
 cmd_parser = argparse.ArgumentParser()
 cmd_parser.add_argument('mapfile', help='Mapfile name (`.map` is automatically added!)', type=str)
 cmd_parser.add_argument('turns', help='No. of turns', type=int)
+cmd_parser.add_argument('-b', dest='bots', help='participating bots', default=[], action='append')
 cmd_args = cmd_parser.parse_args()
 
 parser = ConfigParser()
@@ -51,7 +52,8 @@ engine_options = {	"turntime"    : float,
 					"turns"       : cmd_args.turns}
 for option in parser.options('Engine'):
 		engine_options[option] = engine_options[option](parser.get('Engine', option))
-
+if len(cmd_args.bots) != 0:
+	engine_options['json_logdir'] = "../game-ui/js"
 game_options = {"turntime"    : engine_options["turntime"],
 				"loadtime"    : engine_options["loadtime"],
 				"turns"       : engine_options["turns"],
@@ -80,42 +82,67 @@ json_replay_list = []
 json_notifications = []
 game = quantum.Game(game_options, json_replay_list, json_notifications)
 
-# now we know how many bots are to be picked
-conn = pymysql.connect(host='localhost', user='ananya', passwd='ScherbiuS', db='bob')
-cur = conn.cursor()
-cur.execute("select * from teams;")
-res = cur.fetchall()
-all_teams = []
-for t in res:
-	folder = os.path.join(engine_options['cellar'], t[1]+'_'+str(t[0]))
-	fname = os.listdir(folder)[0]
-	detail = {"name" : t[1],
-			"id"    : t[0],
-			"fname" : fname,
-			"type"  : fname.split('.')[1]}
-	if detail['type'] == 'py':
-		detail['cmd'] = "python %s" % os.path.join(engine_options['arena'], fname)
-	elif detail['type'] == 'prog':
-		detail['cmd'] = "./%s" % os.path.join(engine_options['arena'], fname)
-	else:
-		raise RuntimeError("Invalid Bot Name %s @ %s" % (fname, folder))
-	all_teams.append(detail)
+if len(cmd_args.bots) == 0:
+	# now we know how many bots are to be picked
+	conn = pymysql.connect(host='localhost', user='ananya', passwd='ScherbiuS', db='bob')
+	cur = conn.cursor()
+	cur.execute("select * from teams;")
+	res = cur.fetchall()
+	all_teams = []
+	for t in res:
+		folder = os.path.join(engine_options['cellar'], t[1]+'_'+str(t[0]))
+		fname = os.listdir(folder)[0]
+		detail = {"name" : t[1],
+				"id"    : t[0],
+				"fname" : fname,
+				"type"  : fname.split('.')[1]}
+		if detail['type'] == 'py':
+			detail['cmd'] = "python %s" % os.path.join(engine_options['arena'], fname)
+		elif detail['type'] == 'prog':
+			detail['cmd'] = "./%s" % os.path.join(engine_options['arena'], fname)
+		else:
+			raise RuntimeError("Invalid Bot Name %s @ %s" % (fname, folder))
+		all_teams.append(detail)
 
-# generate all combinations (lazily)
-all_combinations = itertools.combinations(all_teams, game.bot_count)
+	# generate all combinations (lazily)
+	all_combinations = itertools.combinations(all_teams, game.bot_count)
+else:
+	combo = []
+	for tfolder in cmd_args.bots:
+		folder = os.path.join(engine_options['cellar'], tfolder)
+		fname = os.listdir(folder)[0]
+		tid = tfolder.split('_')[-1]
+		tname = '_'.join(tfolder.split('_')[0:-1])
+		detail = {"name" : tname,
+				"id"    : int(tid),
+				"fname" : fname,
+				"type"  : fname.split('.')[1]}
+		if detail['type'] == 'py':
+			detail['cmd'] = "python %s" % os.path.join(engine_options['arena'], fname)
+		elif detail['type'] == 'prog':
+			detail['cmd'] = "%s" % os.path.join(engine_options['arena'], fname)
+		else:
+			raise RuntimeError("Invalid Bot Name %s @ %s" % (fname, folder))
+		combo.append(detail)
+	all_combinations = [combo]
+print(all_combinations)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN LOOP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 print("CWD", os.getcwd(), '\n')
 
 for combo in all_combinations:
-
 	bot_details = [bd for bd in combo]
 	# shuffle for important reason (hard-coding)
 	random.shuffle(bot_details)
-	# set game-id, generate a "URL" :P
-	url = ''
-	for bd in bot_details:
-		url += '%d:' % (bd['id'])
-	url += mapfile
-	game_options["game_id"] = uuid.uuid3(uuid.NAMESPACE_URL, url)
+	if len(cmd_args.bots) == 0:
+		# set game-id, generate a "URL" :P
+		url = ''
+		for bd in bot_details:
+			url += '%d:' % (bd['id'])
+		url += mapfile
+		game_options["game_id"] = uuid.uuid3(uuid.NAMESPACE_URL, url)
+	else:
+		game_options["game_id"] = "_judge"
 
 	# setup everything in arena/
 	submit_folder = engine_options['cellar']
@@ -175,13 +202,14 @@ for combo in all_combinations:
 		print("status :\t", result['status'])
 		print("pturns :\t", result['player_turns'])
 	# update ELO ratings!!
-	[print(new_rating) for new_rating in board_mnt.do_rating([detail['id'] for detail in bot_details], result['score'], result['status']), result['player_turns']]
-	# save the replay in DB
-	insq = "insert into %s values ( '%s'" % (mapfile, str(game_options["game_id"]))
-	for detail in bot_details:
-		insq += ", '%d'" % detail['id']
-	insq += ");"
-	insert_safely(cur, insq)
+	if len(cmd_args.bots) == 0:
+		[print(new_rating) for new_rating in board_mnt.do_rating([detail['id'] for detail in bot_details], result['score'], result['status'], result['player_turns'])]
+		# save the replay in DB
+		insq = "insert into %s values ( '%s'" % (mapfile, str(game_options["game_id"]))
+		for detail in bot_details:
+			insq += ", '%d'" % detail['id']
+		insq += ");"
+		insert_safely(cur, insq)
 
 	# close FDs!
 	engine_options["game_log"].close()
@@ -199,7 +227,9 @@ for combo in all_combinations:
 		except:
 			shutil.rmtree(i)
 	os.chdir(this_dir)
-conn.commit()
-board_mnt.commit('teams')
-cur.close()
-conn.close()
+
+if len(cmd_args.bots) == 0:
+	conn.commit()
+	board_mnt.commit('teams')
+	cur.close()
+	conn.close()

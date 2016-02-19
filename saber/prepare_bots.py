@@ -162,6 +162,7 @@ def prepare(teams):
 				print("STDERR\n======\n"+ret_state.stderr.decode('utf8'))
 			else:
 				print("\tCleaning dir...")
+				fnames = os.listdir(folder)
 				for fname in fnames:
 					if fname == "%s_launcher.prog" % team[1]:
 						pass
