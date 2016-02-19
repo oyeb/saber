@@ -1,0 +1,127 @@
+@font-face {
+    font-family: '3Dumb';
+    src:  url('3Dumb.ttf') format('truetype');
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #151515;
+     background: url("../img/terrain.png") repeat;
+}
+
+canvas {
+    clear: left;
+    clear: left;
+    display: block;
+    margin: auto;
+    z-index: 0;
+}
+/*
+
+#display_score{
+    opacity: 0.5;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: none;
+    width: 800px;
+    height: 450px;
+    background: url("../img/terrain.png") repeat;
+    margin-top: 110px;
+    margin-left: 100px;
+    z-index: 1000;
+
+}
+#display_score p{   
+    text-align: center;
+    opacity: 1;
+}
+
+#score{
+    width: 100px;
+    height: 100px;
+    margin: auto;
+    
+}
+#display_score h1{
+    padding-top: 140px;
+    text-align: center;
+}
+*/
+#replay_data{
+    border-top : 2px dashed black;
+}
+.col-md-4{
+    font-size: 12px;
+     min-height: 400px;
+    border: 1px dashed black;
+}
+
+ h1{
+    text-align: center;
+}
+
+#table{
+    position: absolute;
+    bottom:0;
+    right:0;
+}
+
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;}
+.tg .tg-g145{font-family:"Times New Roman", Times, serif !important;;text-align:center;vertical-align:top}
+.tg .tg-dgof{font-size:medium;font-family:"Times New Roman", Times, serif !important;;text-align:center;vertical-align:top}
+@media screen and (max-width: 767px) {.tg {width: auto !important;}.tg col {width: auto !important;}.tg-wrap {overflow-x: auto;-webkit-overflow-scrolling: touch;}}
+
+
+.banner{
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+}
+.banner p{
+    left: 0;
+    line-height: 200px;
+    margin: auto;
+    margin-top: -100px;
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    font-family: '3Dumb';
+    opacity: .2;
+    font-size: 50px;
+}
+
+table tr th{
+    width: 100px;
+}
+
+#controls{
+    position: absolute;
+    bottom: 0;
+    left: 0; 
+    border: 1px dashed black;
+    width: 200px;
+}
+#controls p{
+    text-align: center;
+}
+#controls button{
+    width: 49%;
+}
+
+
+.ign{
+    color: brown;
+}
+
+.inv{
+    color: red;
+}

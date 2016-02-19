@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 import traceback
-import pprint
 import sys
 import os
 import datetime
 import random
-import argparse
+from configparser import ConfigParser
 import json
 
 import engine
@@ -14,113 +13,149 @@ import quantum
 """
 All paths must be relative
 """
+print("CWD", os.getcwd(), '\n')
 
-parser = argparse.ArgumentParser(description="Plays a single game among the given bots", add_help=True)
+parser = ConfigParser()
+if getattr( sys, 'frozen', False ) :
+        parser.read("saber/engine_settings.ini")
+else :
+        parser.read("engine_settings.ini")
+engine_options = {	"turntime"    : float,
+					"loadtime"    : float,
+					"epochs"      : int,
+					"threshold"   : int,
+					"log_dir"     : str,
+					"map_dir"     : str,
+					"mybot_dir"   : str,
+					"sample_dir"  : str,
+					"json_logdir" : str,
+					"arena"       : str,
+					"user_cfg"    : str,
+					"base_dir"    : os.getcwd(),
+					"game_id"     : "LOCAL_GAME",
+					"turns"       : None}
+for option in parser.options('Engine'):
+		engine_options[option] = engine_options[option](parser.get('Engine', option))
 
-engine_spec = parser.add_argument_group('engine specific options')
-engine_spec.add_argument("-gi", "--game-id", dest="game_id",
-					default="boo",
-					help="GAME-ID, needs to be unique and forever increasing.")
-engine_spec.add_argument("-m", "--map-file", dest="map", required=True,
-					help="Name of the map-file")
-engine_spec.add_argument("-t", "--turns", dest="turns",
-					default=5, type=int,
-					help="Max. turns in a game")
-engine_spec.add_argument("-tt", "--turn-time", dest="turntime",
-					default="3", type=int,
-					help="Timeout for making a turn")
-engine_spec.add_argument("-ld", "--load-time", dest="loadtime",
-					default="3", type=int,
-					help="Timeout for initialisation")
-engine_spec.add_argument("--points", dest="points",
-					default="1", type=int,
-					help="Points awarded for survivng a round.")
-engine_spec.add_argument("-b", dest="bot_list", action="store",
-					required=True, type=str, nargs="+",
-					help="List of bots")
-engine_spec.add_argument("-l", dest="log_path", action="store",
-					required=True, type=str,
-					help="Log Area path. This must be a relative path!")
-engine_spec.add_argument("-a", dest="arena", action="store",
-					required=True, type=str, default='arena',
-					help="Arena, where the sanboxes are run. This must be a relative path.")
+game_options = {"turntime"       : engine_options["turntime"],
+				"loadtime"       : engine_options["loadtime"],
+				"turns"          : engine_options["turns"],
+				"base_dir"       : os.getcwd(),
+				"epochs"         : engine_options["epochs"],
+				"threshold"      : engine_options["threshold"],
+				"cspeed"         : float,
+				"dcspeed"        : float,
+				"max_arate"      : float,
+				"regen"          : float,
+				"amult"          : float,
+				"amult_score"    : float,
+				"sc_pawn"        : float,
+				"sc_loss"        : float,
+				"bonus"          : int,
+				"reward"         : int,}
+for option in parser.options('Game'):
+	game_options[option] = game_options[option](parser.get('Game', option))
 
-game_spec = parser.add_argument_group('game specific options')
-game_spec.add_argument('-cs', '--cspeed', dest='cspeed',
-						default=5, type=int,
-						help='Connection speed. (routers/turn)')
-game_spec.add_argument('-dcs', '--dcspeed', dest='dcspeed',
-						default=10, type=int,
-						help='dis-connection speed. (routers/turn)')
-game_spec.add_argument('-ar', '--max_arate', dest='max_arate',
-						default=5, type=float,
-						help='Max Attack Rate on a connection (qubits/turn)')
-game_spec.add_argument('-rg', '--regen', dest='regen',
-						default=0.8, type=float,
-						help='Regeneration Rate of each node. (qubits/turn)')
-game_spec.add_argument('-am', '--amult', dest='amult',
-						default=3.2, type=float,
-						help='Attack multiplier. (3.0 to 4.0)')
-args = parser.parse_args()
-# print(args)
+sample_bot_names = ["donothing_launcher", "hard_coded_launcher", "special_launcher"]
+sample_bots = [ {"fname"   : "donothing_launcher.prog",
+				 "cmd"     : None},
+				{"fname"   : "hard_coded_launcher.prog",
+				 "cmd"     : None},
+				{"fname"   : "special_launcher.prog",
+				 "cmd"     : None}]
 
-# run rounds:
-# bots = list of paths to bot_files
-# enumerate engine options
-engine_options = {	"game_id"   : args.game_id,
-					"turntime"  : args.turntime,
-					"loadtime"  : args.loadtime,
-					"points"    : args.points,
-					"map"       : os.path.normpath( os.path.join( os.getcwd(), args.map)),
-					"log_dir"   : os.path.normpath( os.path.join( os.getcwd(), args.log_path )),
-					"arena"     : os.path.normpath( os.path.join( os.getcwd(), args.arena )),
-					"turns"     : args.turns,
-					"base_dir"  : os.getcwd(),
-					"bot_count" : len(args.bot_list)}
+sample_dir = os.path.join(engine_options["base_dir"], engine_options["sample_dir"])
+for bot in sample_bots:
+	bot['cmd'] = "%s" % os.path.join( sample_dir, bot['fname'])
 
-# enumerate game options
-game_options = {"map"       : engine_options["map"],
-				"turntime"  : args.turntime,
-				"loadtime"  : args.loadtime,
-				"turns"     : args.turns,
-				"bot_count" : len(args.bot_list),
-				"base_dir"  : os.getcwd(),
-				"cspeed"    : args.cspeed,
-				"dcspeed"   : args.dcspeed,
-				"max_arate" : args.max_arate,
-				"regen"     : args.regen,
-				"amult"     : args.amult}
+parser.read(engine_options["user_cfg"])
+game_options['turns'] = engine_options['turns'] = int(parser.get('sample', 'turns'))
+mapfile = parser.get('map', 'mapfile')
+map_dir = os.path.join( os.getcwd(), engine_options["map_dir"] )
+game_options["map"] = os.path.join(map_dir, mapfile)
 
-# make file decriptors for game level logs
+json_replay_list = []
+json_notifications = []
+game = quantum.Game(game_options, json_replay_list, json_notifications) #, json_notifications)
+
+mybot_dir = os.path.join(engine_options["base_dir"], engine_options["mybot_dir"])
+mybot = {	"fname"   : parser.get('mybot', 'name')}
+if ".prog" in mybot['fname'] or ".exe" in mybot['fname']:
+	mybot['cmd'] = "%s" % os.path.join( mybot_dir, mybot['fname'])
+else:
+	raise RuntimeError("Invalid BOT-NAME")
+
+use_case = parser.get('sample', 'use')
+if use_case != 'none':
+	if use_case != 'all':
+		allow = use_case.split(',')
+		for fspec in allow:
+			if fspec not in sample_bot_names:
+				raise RuntimeError("\nThe file \"%s\" is not recognised by saber!\nPlease check `use` in `config.ini`" % fspec)
+		allowed = []
+		for i in range(0, len(sample_bots)):
+			if sample_bots[i]['fname'].split('.')[0] in allow:
+				allowed.append(sample_bots[i])
+	else:
+		allowed = sample_bots
+	num_sample = len(allowed)
+	num_reqd   = game.bot_count - 1
+	# spread evenly
+	needs = [num_reqd//num_sample+1]*(num_reqd%num_sample) + [num_reqd//num_sample]*(num_sample - num_reqd%num_sample)
+	random.shuffle(needs)
+	# choose the cluster_id 'chance' no. of times for the i^th sample_bot
+	available = [k for k in range(1, game.bot_count)]
+	bot_details = [None] * game.bot_count
+
+	for samp_bot_id, chances in enumerate(needs):
+		for _ in range(0, chances):
+			bid = random.choice(available)
+			available.remove(bid)
+			bot_details[bid] = allowed[samp_bot_id]
+else:
+	bot_details = [mybot for _ in range(game.bot_count)]
+
+# setup MyBot!
+bot_details[0] = mybot
+"""
+for i, bot in enumerate(bot_details):
+	print(i, bot)
+"""
+
+print("-"*80)
+print("# of bots in Map '%s' is %d" % (mapfile, game.bot_count))
+print("Your script, `%s` is dubbed `bot0` {id = 0} in this game." % mybot['fname'])
+for i, bot in enumerate(bot_details):
+	print("bot%2d is %s" % (i, bot['fname']))
+print("-"*80 + '\n')
+print("DEBUG")
+print("=====")
+
 if not os.path.exists(engine_options["log_dir"]):
 	os.mkdir(engine_options["log_dir"])
 if not os.path.exists(engine_options["arena"]):
 	os.mkdir(engine_options["arena"])
+if not os.path.exists(engine_options["json_logdir"]):
+	os.mkdir(engine_options["json_logdir"])
 engine_options["game_log"] = open( os.path.join( engine_options["log_dir"], "game_log.r%d.log" % 0), 'w' ) # round 0
 
-# game = quantum.Game(game_options) 
-game = quantum.Game(game_options)
-
-result, json_start, json_replay, json_end = engine.run_game(game, args.bot_list, engine_options)
-
+result, json_start, json_end, json_mybot_ipstream, json_mybot_invalid, json_mybot_ignored, json_mybot_valid = engine.run_game(game, bot_details, engine_options)
+# json_replay_list is also ready,
+# jsonize it
+json_replay = json.dumps(json_replay_list, separators=(',', ':'))
+jnotify     = json.dumps(json_notifications, separators=(',', ':'))
 # do more logging
-json_data_dump = open( os.path.join( engine_options["log_dir"], "game_start.json"), 'w' )
-json_data_dump.write(json_start)
-json_data_dump.close()
-json_data_dump = open( os.path.join( engine_options["log_dir"], "game_replay.json"), 'w' )
-json_data_dump.write(json_replay)
-json_data_dump.close()
-json_data_dump = open( os.path.join( engine_options["log_dir"], "game_end.json"), 'w' )
-json_data_dump.write(json_end)
-json_data_dump.close()
+if os.path.exists(engine_options["json_logdir"]):
+	json_data_dump = open( os.path.join( engine_options["json_logdir"], "game_replay.js"), 'w' )
+	json_data_dump.write("GAME_START=%s;\nGAME_REPLAY=%s;\nMYBOT_IP_STREAM=%s;\nMYBOT_INV_STREAM=%s;\nMYBOT_IGN_STREAM=%s;\nMYBOT_VAL_STREAM=%s\nGAME_END=%s;\nGAME_NOTIFICATIONS=%s;\n" % (json_start, json_replay, json_mybot_ipstream, json_mybot_invalid, json_mybot_ignored, json_mybot_valid, json_end, jnotify))
+	json_data_dump.close()
 
 print()
-print(result)
-'''
-pp = pprint.PrettyPrinter(indent=2)
-pp.pprint(json.loads(json_replay))
-#print(json_replay)
-'''
+for k in result.keys():
+	print(k, ':', result[k])
 
 # close FDs!
 engine_options["game_log"].close()
+
+print("\nDONE\n" + "="*4)
+print("You can see the logs in `logs` and visualise the game by running `game-ui/view_game.html` in your browser!")

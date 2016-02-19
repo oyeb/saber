@@ -1,4 +1,0 @@
-#!/usr/bin/bash
-
-ls -alh
-echo "done"
