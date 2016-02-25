@@ -131,6 +131,9 @@ else:
 print("CWD", os.getcwd(), '\n')
 
 for combo in all_combinations:
+	json_replay_list = []
+	json_notifications = []
+	game = quantum.Game(game_options, json_replay_list, json_notifications)
 	bot_details = [bd for bd in combo]
 	# shuffle for important reason (hard-coding)
 	random.shuffle(bot_details)
@@ -141,6 +144,11 @@ for combo in all_combinations:
 			url += '%d:' % (bd['id'])
 		url += mapfile
 		game_options["game_id"] = uuid.uuid3(uuid.NAMESPACE_URL, url)
+		# check if this game has been run already!
+		cur.execute("select count(*) from %s where game_id='%s'" % (mapfile, game_options['game_id']))
+		if cur.fetchall()[0][0] == 1:
+			print("SKIPPING as it ALREADY exists!\n%s\n" % game_options['game_id'])
+			continue
 	else:
 		game_options["game_id"] = "_judge"
 
@@ -231,5 +239,8 @@ for combo in all_combinations:
 if len(cmd_args.bots) == 0:
 	conn.commit()
 	board_mnt.commit('teams')
+	# show how many in this table
+	cur.execute("select count(*) from %s;" % mapfile)
+	print("\nNow %s table has: %d" % (mapfile, cur.fetchall()[0][0]))
 	cur.close()
 	conn.close()

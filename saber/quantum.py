@@ -762,7 +762,9 @@ class Game:
 					for item in notices:
 						if item[0] == 'p':
 							self.age = BORING_THRESHOLD
-		self.age -= 1
+		self.age -= 0.5
+		# the game engine calls quantum.over() twice per turn. Hence 0.5
+		# Don't know how to fix this...
 		if self.age == 0:
 			return True
 		for cl in self.Clusters:

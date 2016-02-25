@@ -224,8 +224,8 @@ class myBot():
 							enem_profits[victim] = (99999,"wait")
 						else:
 							# this move `can` be made in this turn
-							if move[1]['pow'] - self.booked[mcid] - (move[1]['dist']+move[1]['kc']/3) > 8 and game.Servers[mcid].reserve - (move[1]['dist']+move[1]['kc']/3) > 8:
-								enem_profits[victim] = (self.allrates[victim]['dr'], move[1]['dist'], move[1]['kc']/3, mcid, victim)
+							if move[1]['pow'] - self.booked[mcid] - (move[1]['dist']+move[1]['kc']/4) > 8 and game.Servers[mcid].reserve - (move[1]['dist']+move[1]['kc']/4) > 8:
+								enem_profits[victim] = (self.allrates[victim]['dr'], move[1]['dist'], move[1]['kc']/4, mcid, victim)
 							else:
 								enem_profits[victim] = (999999, "no_resource")
 					else:
@@ -234,8 +234,8 @@ class myBot():
 						enem_profits[victim] = (999999,"no time")
 				else:
 					# dr > 0
-					if move[1]['pow'] - self.booked[mcid] - (move[1]['dist']+move[1]['kc']/3) > 8 and game.Servers[mcid].reserve - (move[1]['dist']+move[1]['kc']/3) > 8:
-						enem_profits[victim] = (self.allrates[victim]['dr'], move[1]['dist'], move[1]['kc']/3, mcid, victim)
+					if move[1]['pow'] - self.booked[mcid] - (move[1]['dist']+move[1]['kc']/4) > 8 and game.Servers[mcid].reserve - (move[1]['dist']+move[1]['kc']/4) > 8:
+						enem_profits[victim] = (self.allrates[victim]['dr'], move[1]['dist'], move[1]['kc']/4, mcid, victim)
 					else:
 						enem_profits[victim] = (999999, "no resource")
 				game.error_dump("EN "+str(enem_profits[victim]))
@@ -256,7 +256,7 @@ class myBot():
 				if dr > 0 and self.age > 0:
 					self.age -= 1
 				else:
-					self.age = 15
+					self.age = 10
 					game.attack(msid, sink, 2.0)
 					self.booked[msid] += dist
 
